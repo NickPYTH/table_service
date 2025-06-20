@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>{{ table.title }}</h1>
+<p>Shared by: {{ table.owner.username }}</p>
+
+<div class="table-responsive">
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                {% for column in columns %}
+                <th>{{ column.name }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in rows %}
+            <tr>
+                {% for cell in row.cells.all %}
+                <td>{{ cell.value }}</td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<p>To edit this table, please <a href="{% url 'login' %}?next={{ request.path }}">login</a>.</p>
+{% endblock %}

@@ -1,0 +1,79 @@
+import django_tables2 as tables
+from django.template.backends.utils import csrf_input
+from django.urls import reverse
+from django.utils.html import format_html
+from .models import Row
+
+
+class DynamicTable(tables.Table):
+    class Meta:
+        model = Row
+        attrs = {
+            'class': 'table table-bordered table-hover',
+            'thead': {
+                'class': 'table-light'
+            }
+        }
+        fields = ()  # Будем заполнять динамически
+
+    def __init__(self, *args, table_obj=None, request=None, **kwargs):
+        self.base_columns.clear()
+
+        self.table_obj = table_obj
+        self.request = request
+
+        if table_obj:
+            for column in table_obj.columns.all():
+                self.base_columns[f'col_{column.id}'] = tables.Column(
+                    verbose_name=self.get_column_header(column),
+                    orderable=False,
+                    accessor=tables.A(f'row.get_cell_value({column.id})')
+                )
+            self.base_columns['delete'] = tables.Column(
+                verbose_name='',
+                orderable=False,
+                empty_values=(),
+                attrs={
+                    'td': {'class': 'text-end',
+                           'width': '50px'}
+                }
+            )
+
+        super().__init__(*args, **kwargs)
+
+    def render_delete(self, record):
+        if self.table_obj.owner == self.request.user:
+            delete_url = reverse('delete_row',
+                                 kwargs={'table_pk': self.table_obj.pk,
+                                         'row_pk': record.id
+                                         })
+            return format_html(
+                '<form method="post" action="{}" style="display:inline;">{}'
+                '<button type="submit" '
+                'class="btn btn-sm btn-danger" '
+                'onclick="return confirm(\'Удалить строку?\');">'
+                '×</button>'
+                '</form>',
+                delete_url,
+                csrf_input(self.request)
+            )
+
+    def get_column_header(self, column):
+        if self.table_obj.owner == self.request.user:
+            delete_url = reverse('delete_column',
+                                 kwargs={'table_pk': self.table_obj.pk,
+                                         'column_pk': column.id
+                                         })
+            return format_html(
+                '{} <form method="post" action="{}" style="display:inline;">{}'
+                '<button type="submit" '
+                'class="btn btn-sm btn-danger ms-1" '
+                'onclick="return confirm(\'Удалить столбец?\');">'
+                '×</button>'
+                '</form>',
+                column.name,
+                delete_url,
+                csrf_input(self.request)
+            )
+        return column.name
+

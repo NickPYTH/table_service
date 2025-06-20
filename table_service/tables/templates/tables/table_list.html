@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block title %}Мои таблицы{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-table me-2"></i>Мои таблицы</h1>
+    <a href="{% url 'create_table' %}" class="btn btn-success">
+        <i class="fas fa-plus me-1"></i> Новая таблица
+    </a>
+</div>
+
+{% if tables %}
+<div class="list-group">
+    {% for table in tables %}
+    <a href="{% url 'table_detail' table.pk %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+        <div>
+            <h5 class="mb-1">{{ table.title }}</h5>
+            <small class="text-muted">Создано: {{ table.created_at|date:"d.m.Y H:i" }}</small>
+        </div>
+        <div>
+            <span class="badge bg-primary rounded-pill me-2">
+                {{ table.rows.count }} строк
+            </span>
+            <span class="badge bg-secondary rounded-pill">
+                {{ table.columns.count }} столбцов
+            </span>
+        </div>
+    </a>
+    {% endfor %}
+</div>
+{% else %}
+<div class="alert alert-info">
+    <h4 class="alert-heading">У вас пока нет таблиц</h4>
+    <p>Создайте свою первую таблицу, нажав кнопку "Новая таблица"</p>
+</div>
+{% endif %}
+{% endblock %}
