@@ -42,12 +42,14 @@ class Row(models.Model):
     class Meta:
         ordering = ['order']
 
-    def get_cell_value(self, column_id):
-        cell = self.cells.filter(column_id=column_id).first()
-        if cell:
-            return cell.value
-        else:
-            return ''
+    @property
+    def cell_values(self):
+        if not hasattr(self, '_cell_values_cache'):
+            self._cell_values_cache = {
+                cell.column_id: cell.value
+                for cell in self.cells.all()
+            }
+        return self._cell_values_cache
 
     def __str__(self):
         return f"Row {self.order} in {self.table.title}"

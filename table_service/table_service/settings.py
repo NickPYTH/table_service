@@ -43,6 +43,8 @@ INSTALLED_APPS = [
     'crispy_forms',
 ]
 
+CORS_ORIGIN_ALLOW_ALL = True
+
 CRISPY_TEMPLATE_PACK = 'uni_form'
 
 MIDDLEWARE = [

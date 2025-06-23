@@ -1,14 +1,20 @@
 from django.shortcuts import render, redirect, get_object_or_404, reverse
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.models import User
 from django.http import JsonResponse, HttpResponseForbidden
-from django.views.decorators.http import require_http_methods
+from django.template.loader import render_to_string
+
 from .models import Table, Column, Row, Cell, RowPermission
-from .forms import TableForm, ColumnForm, CellForm, ShareTableForm
+from .forms import TableForm, ColumnForm, CellForm, ShareTableForm, RowEditForm
 from django.contrib import messages
 from django_tables2 import RequestConfig
 from .tables import DynamicTable
 from django.views.decorators.http import require_POST
+
+
+# Проверка прав на редактирование конкретной строки
+def has_row_edit_permission(user, row):
+    return (row.table.owner == user or
+            RowPermission.objects.filter(row=row, user=user, can_edit=True).exists())
 
 
 @login_required
@@ -124,15 +130,42 @@ def delete_row(request, table_pk, row_pk):
 
 
 @login_required
+def edit_row(request, table_pk, row_pk):
+    table = get_object_or_404(Table, pk=table_pk)
+    row = get_object_or_404(Row, pk=row_pk, table=table)
+    if not has_row_edit_permission(request.user, row):
+        return JsonResponse({'status': 'error', 'message': 'Нет прав на редактирование'}, status=403)
+
+    if request.method == 'POST':
+        form = RowEditForm(request.POST, row=row)
+        if form.is_valid():
+            for column in table.columns.all():
+                field_name = f'col_{column.id}'
+                Cell.objects.update_or_create(
+                    row=row,
+                    column=column,
+                    defaults={'value': form.cleaned_data[field_name]}
+                )
+            return JsonResponse({'status': 'success'})
+        return JsonResponse({'status': 'error', 'errors': form.errors}, status=400)
+
+    # GET запрос - возвращаем форму
+    form = RowEditForm(row=row)
+    html = render_to_string('tables/row_edit_form/row_edit_form.html', {
+        'form': form,
+        'table': table,
+        'row': row
+    }, request=request)
+    return JsonResponse({'status': 'success', 'html': html})
+
+
+@login_required
 def table_detail(request, pk):
     table_obj = get_object_or_404(Table, pk=pk)
     # Проверка прав доступа
     if table_obj.owner != request.user and not table_obj.rowpermission_set.filter(user=request.user).exists():
         return HttpResponseForbidden("You don't have permission to access this table.")
 
-    queryset = table_obj.rows.all().prefetch_related('cells', 'cells__column')
-    table = DynamicTable(data=queryset, table_obj=table_obj, request=request)
-    RequestConfig(request).configure(table)
     if table_obj.owner == request.user:
         editable_rows = [row.id for row in table_obj.rows.all()]
     else:
@@ -142,8 +175,10 @@ def table_detail(request, pk):
             row__in=table_obj.rows.all()
         )]
 
+    queryset = table_obj.rows.all().prefetch_related('cells', 'cells__column')
+    table = DynamicTable(data=queryset, table_obj=table_obj, editable_rows=editable_rows, request=request)
+    RequestConfig(request).configure(table)
     return render(request, 'tables/table_detail.html', {
         'table_obj': table_obj,
         'table': table,
-        'editable_rows': editable_rows,
     })
