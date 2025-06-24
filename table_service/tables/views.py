@@ -1,10 +1,13 @@
+from datetime import date
+
+from django.core.exceptions import ValidationError
 from django.shortcuts import render, redirect, get_object_or_404, reverse
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponseForbidden
 from django.template.loader import render_to_string
 
 from .models import Table, Column, Row, Cell, RowPermission
-from .forms import TableForm, ColumnForm, CellForm, ShareTableForm, RowEditForm
+from .forms import TableForm, ColumnForm, ShareTableForm, RowEditForm
 from django.contrib import messages
 from django_tables2 import RequestConfig
 from .tables import DynamicTable
@@ -89,10 +92,30 @@ def add_row(request, pk):
 
     # Создаем пустые ячейки для всех колонок
     for column in table.columns.all():
+        defaults = {
+            'text_value': None,
+            'integer_value': None,
+            'float_value': None,
+            'boolean_value': None,
+            'date_value': None
+        }
+
+        # Устанавливаем пустое значение в зависимости от типа колонки
+        if column.data_type == Column.ColumnType.INTEGER:
+            defaults['integer_value'] = 0
+        elif column.data_type == Column.ColumnType.FLOAT:
+            defaults['float_value'] = 0.0
+        elif column.data_type == Column.ColumnType.BOOLEAN:
+            defaults['boolean_value'] = False
+        elif column.data_type == Column.ColumnType.DATE:
+            defaults['date_value'] = date.today()
+        else:  # TEXT
+            defaults['text_value'] = ''
+
         Cell.objects.create(
             row=row,
             column=column,
-            value=''
+            **defaults
         )
 
     messages.success(request, 'Новая строка успешно добавлена')
@@ -141,10 +164,12 @@ def edit_row(request, table_pk, row_pk):
         if form.is_valid():
             for column in table.columns.all():
                 field_name = f'col_{column.id}'
+                value = form.cleaned_data[field_name]
+
                 Cell.objects.update_or_create(
                     row=row,
                     column=column,
-                    defaults={'value': form.cleaned_data[field_name]}
+                    defaults={'value': value}
                 )
             return JsonResponse({'status': 'success'})
         return JsonResponse({'status': 'error', 'errors': form.errors}, status=400)

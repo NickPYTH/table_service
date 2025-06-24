@@ -2,7 +2,7 @@ import django_tables2 as tables
 from django.template.backends.utils import csrf_input
 from django.urls import reverse
 from django.utils.html import format_html
-from .models import Row
+from .models import Row, Column
 
 
 class DynamicTable(tables.Table):
@@ -23,12 +23,8 @@ class DynamicTable(tables.Table):
         self.editable_rows = editable_rows
         if table_obj:
             for column in table_obj.columns.all():
-                col_name = f'col_{column.id}'
-                self.base_columns[col_name] = tables.Column(
-                    verbose_name=self.get_column_header(column),
-                    orderable=False,
-                    accessor=tables.A(f'cell_values.{column.id}')
-                )
+                self._add_column(column)
+
             self.base_columns['delete'] = tables.Column(
                 verbose_name='',
                 orderable=False,
@@ -49,6 +45,39 @@ class DynamicTable(tables.Table):
             )
         super().__init__(*args, **kwargs)
 
+    def _add_column(self, column):
+        col_name = f'col_{column.id}'
+        accessor = f'cell_values.{column.id}'
+
+        # Выбираем соответствующий тип столбца
+        if column.data_type == Column.ColumnType.INTEGER:
+            self.base_columns[col_name] = tables.Column(
+                verbose_name=self.get_column_header(column),
+                accessor=accessor,
+                attrs={'td': {'class': 'text-end'}}
+            )
+        if column.data_type == Column.ColumnType.FLOAT:
+            self.base_columns[col_name] = tables.Column(
+                verbose_name=self.get_column_header(column),
+                accessor=accessor,
+                attrs={'td': {'class': 'text-end'}}
+            )
+        elif column.data_type == Column.ColumnType.BOOLEAN:
+            self.base_columns[col_name] = tables.BooleanColumn(
+                verbose_name=self.get_column_header(column),
+                accessor=accessor,
+                attrs={'td': {'class': 'text-center'}}
+            )
+        elif column.data_type == Column.ColumnType.DATE:
+            self.base_columns[col_name] = tables.DateColumn(
+                verbose_name=self.get_column_header(column),
+                accessor=accessor,
+            )
+        else:  # TEXT по умолчанию
+            self.base_columns[col_name] = tables.Column(
+                verbose_name=self.get_column_header(column),
+                accessor=accessor
+            )
 
     def render_delete(self, record):
         if self.table_obj.owner == self.request.user:
