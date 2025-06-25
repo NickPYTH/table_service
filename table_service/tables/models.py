@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.urls import reverse
 from django.utils.crypto import get_random_string
+from django.db.models import Case, When, Value, IntegerField, FloatField, BooleanField, DateField, F, TextField
 
 
 class Table(models.Model):
@@ -57,11 +58,57 @@ class Row(models.Model):
     @property
     def cell_values(self):
         if not hasattr(self, '_cell_values_cache'):
+            cells = self.cells.select_related('column').all()
             self._cell_values_cache = {
                 cell.column_id: cell.value
-                for cell in self.cells.all()
+                for cell in cells
             }
         return self._cell_values_cache
+
+    @classmethod
+    def annotate_for_sorting(cls, queryset, column_id, data_type):
+        """Добавляет аннотации для сортировки по типу данных"""
+        # Создаем подзапрос для каждого типа данных
+        if data_type == Column.ColumnType.INTEGER:
+            subquery = Cell.objects.filter(
+                row=models.OuterRef('pk'),
+                column_id=column_id
+            ).values('integer_value')[:1]
+            return queryset.annotate(
+                **{f'sort_value_{column_id}': models.Subquery(subquery, output_field=IntegerField())}
+            )
+        elif data_type == Column.ColumnType.FLOAT:
+            subquery = Cell.objects.filter(
+                row=models.OuterRef('pk'),
+                column_id=column_id
+            ).values('float_value')[:1]
+            return queryset.annotate(
+                **{f'sort_value_{column_id}': models.Subquery(subquery, output_field=FloatField())}
+            )
+        elif data_type == Column.ColumnType.BOOLEAN:
+            subquery = Cell.objects.filter(
+                row=models.OuterRef('pk'),
+                column_id=column_id
+            ).values('boolean_value')[:1]
+            return queryset.annotate(
+                **{f'sort_value_{column_id}': models.Subquery(subquery, output_field=BooleanField())}
+            )
+        elif data_type == Column.ColumnType.DATE:
+            subquery = Cell.objects.filter(
+                row=models.OuterRef('pk'),
+                column_id=column_id
+            ).values('date_value')[:1]
+            return queryset.annotate(
+                **{f'sort_value_{column_id}': models.Subquery(subquery, output_field=DateField())}
+            )
+        else:  # TEXT
+            subquery = Cell.objects.filter(
+                row=models.OuterRef('pk'),
+                column_id=column_id
+            ).values('text_value')[:1]
+            return queryset.annotate(
+                **{f'sort_value_{column_id}': models.Subquery(subquery, output_field=TextField())}
+            )
 
     def __str__(self):
         return f"Row {self.order} in {self.table.title}"

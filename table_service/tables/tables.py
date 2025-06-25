@@ -54,29 +54,34 @@ class DynamicTable(tables.Table):
             self.base_columns[col_name] = tables.Column(
                 verbose_name=self.get_column_header(column),
                 accessor=accessor,
-                attrs={'td': {'class': 'text-end'}}
+                attrs={'td': {'class': 'text-end'}},
+                order_by=f'sort_value_{column.id}'
             )
         if column.data_type == Column.ColumnType.FLOAT:
             self.base_columns[col_name] = tables.Column(
                 verbose_name=self.get_column_header(column),
                 accessor=accessor,
-                attrs={'td': {'class': 'text-end'}}
+                attrs={'td': {'class': 'text-end'}},
+                order_by=f'sort_value_{column.id}'
             )
         elif column.data_type == Column.ColumnType.BOOLEAN:
             self.base_columns[col_name] = tables.BooleanColumn(
                 verbose_name=self.get_column_header(column),
                 accessor=accessor,
-                attrs={'td': {'class': 'text-center'}}
+                attrs={'td': {'class': 'text-center'}},
+                order_by=f'sort_value_{column.id}'
             )
         elif column.data_type == Column.ColumnType.DATE:
             self.base_columns[col_name] = tables.DateColumn(
                 verbose_name=self.get_column_header(column),
                 accessor=accessor,
+                order_by=f'sort_value_{column.id}'
             )
         else:  # TEXT по умолчанию
             self.base_columns[col_name] = tables.Column(
                 verbose_name=self.get_column_header(column),
-                accessor=accessor
+                accessor=accessor,
+                order_by=f'sort_value_{column.id}'
             )
 
     def render_delete(self, record):
@@ -112,15 +117,42 @@ class DynamicTable(tables.Table):
                                  kwargs={'table_pk': self.table_obj.pk,
                                          'column_pk': column.id
                                          })
-            return format_html(
-                '{} <form method="post" action="{}" style="display:inline;">{}'
+            column_name = format_html(
+                '<div class="d-flex justify-content-between align-items-center">'
+                '<div>{}</div>'
+                '<div>'
+                '<form method="post" action="{}" style="display:inline;">{}'
                 '<button type="submit" '
-                'class="btn btn-sm btn-danger ms-1" '
+                'class="btn btn-sm btn-danger ms-3" '
                 'onclick="return confirm(\'Удалить столбец?\');">'
-                '×</button>'
-                '</form>',
+                '<i class="bi bi-x-lg"></i></button>'
+                '</form>'
+                '</div>'
+                '</div>',
                 column.name,
                 delete_url,
                 csrf_input(self.request)
             )
-        return column.name
+        # Добавляем иконки сортировки
+        sort_param = self.request.GET.get('sort', '')
+        current_sort = f"col_{column.id}"
+
+        if sort_param.lstrip('-') == current_sort:
+            if sort_param.startswith('-'):
+                # Сортировка по убыванию
+                return format_html(
+                    '{} <i class="bi bi-sort-down-alt text-primary"></i>',
+                    column_name
+                )
+            else:
+                # Сортировка по возрастанию
+                return format_html(
+                    '{} <i class="bi bi-sort-up text-primary"></i>',
+                    column_name
+                )
+        else:
+            # Нет сортировки
+            return format_html(
+                '{} <i class="bi bi-filter text-muted"></i>',
+                column_name
+            )

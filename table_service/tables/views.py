@@ -201,6 +201,10 @@ def table_detail(request, pk):
         )]
 
     queryset = table_obj.rows.all().prefetch_related('cells', 'cells__column')
+    # Добавляем аннотации для каждого столбца
+    for column in table_obj.columns.all():
+        queryset = Row.annotate_for_sorting(queryset, column.id, column.data_type)
+
     table = DynamicTable(data=queryset, table_obj=table_obj, editable_rows=editable_rows, request=request)
     RequestConfig(request).configure(table)
     return render(request, 'tables/table_detail.html', {

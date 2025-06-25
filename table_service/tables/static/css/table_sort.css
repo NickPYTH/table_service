@@ -1,0 +1,14 @@
+th.asc:after {
+    content: " ↑";
+    font-size: 0.8em;
+}
+
+th.desc:after {
+    content: " ↓";
+    font-size: 0.8em;
+}
+
+th.sortable:hover {
+    background-color: #f8f9fa;
+    cursor: pointer;
+}
