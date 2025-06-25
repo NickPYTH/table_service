@@ -1,6 +1,6 @@
 from datetime import date
 
-from django.core.exceptions import ValidationError
+from django.contrib.auth.models import User
 from django.shortcuts import render, redirect, get_object_or_404, reverse
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponseForbidden
@@ -11,7 +11,7 @@ from .forms import TableForm, ColumnForm, ShareTableForm, RowEditForm
 from django.contrib import messages
 from django_tables2 import RequestConfig
 from .tables import DynamicTable
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_http_methods
 
 
 # Проверка прав на редактирование конкретной строки
@@ -81,13 +81,27 @@ def add_row(request, pk):
     table = get_object_or_404(Table, pk=pk)
 
     # Проверка прав
-    if table.owner != request.user:
+    if table.owner != request.user and not table.rowpermission_set.filter(user=request.user).exists():
         return HttpResponseForbidden("Вы не можете добавлять строки в эту таблицу")
 
     # Создаем новую строку
     row = Row.objects.create(
         table=table,
-        order=table.rows.count()  # Порядковый номер новой строки
+        order=table.rows.count(),  # Порядковый номер новой строки
+        created_by=request.user
+    )
+
+    if table.owner == request.user:
+        created_by_owner = True
+    else:
+        created_by_owner = False
+
+    RowPermission.objects.create(
+        row=row,
+        user=request.user,
+        can_edit=True,
+        can_delete=True,
+        created_by_owner=created_by_owner
     )
 
     # Создаем пустые ячейки для всех колонок
@@ -120,6 +134,47 @@ def add_row(request, pk):
 
     messages.success(request, 'Новая строка успешно добавлена')
     return redirect('table_detail', pk=table.pk)
+
+
+@login_required
+def manage_row_permissions(request, table_pk, row_pk):
+    table = get_object_or_404(Table, pk=table_pk)
+    row = get_object_or_404(Row, pk=row_pk, table=table)
+
+    # Только владелец таблицы может управлять правами
+    if table.owner != request.user:
+        return HttpResponseForbidden("Only table owner can manage permissions")
+
+    if request.method == 'POST':
+        user_id = request.POST.get('user_id')
+        can_edit = 'can_edit' in request.POST
+        can_delete = 'can_delete' in request.POST
+
+        user = get_object_or_404(User, pk=user_id)
+
+        # Обновляем или создаем разрешение
+        RowPermission.objects.update_or_create(
+            row=row,
+            user=user,
+            defaults={
+                'can_edit': can_edit,
+                'can_delete': can_delete,
+                'created_by_owner': True
+            }
+        )
+        messages.success(request, 'Permissions updated successfully')
+        return redirect('manage_row_permissions', table_pk=table.pk, row_pk=row.pk)
+
+    # Получаем текущие разрешения для строки
+    permissions = row.permissions.filter(created_by_owner=True)
+    all_users = User.objects.exclude(pk=table.owner.pk)
+
+    return render(request, 'tables/manage_permissions.html', {
+        'table': table,
+        'row': row,
+        'permissions': permissions,
+        'all_users': all_users
+    })
 
 
 @login_required
@@ -184,28 +239,80 @@ def edit_row(request, table_pk, row_pk):
     return JsonResponse({'status': 'success', 'html': html})
 
 
+@login_required()
+def shared_table_view(request, share_token):
+    table = get_object_or_404(Table, share_token=share_token)
+
+    # Получаем строки, которые пользователь может видеть
+    rows = Row.get_visible_rows(request.user, table)
+
+    table_view = DynamicTable(data=rows, table_obj=table, request=request)
+    RequestConfig(request).configure(table_view)
+
+    return render(request, 'tables/shared_table.html', {
+        'table_obj': table,
+        'table': table_view,
+        'is_owner': table.owner == request.user
+    })
+
+
+@login_required
+def shared_tables_list(request):
+    # Получаем все таблицы, к которым у пользователя есть доступ
+    shared_tables = Table.get_shared_tables(request.user)
+
+    # Добавляем информацию о правах для каждой таблицы
+    tables_with_access = []
+    for table in shared_tables:
+        if table.owner == request.user:
+            is_owner = True
+        else:
+            is_owner = False
+
+        can_edit = is_owner or RowPermission.objects.filter(
+            row__table=table,
+            user=request.user,
+            can_edit=True
+        ).exists()
+
+        tables_with_access.append({
+            'table': table,
+            'is_owner': is_owner,
+            'can_edit': can_edit,
+            'shared_by': table.owner.username
+        })
+
+    return render(request, 'tables/shared_tables_list.html', {
+        'tables': tables_with_access
+    })
+
+
+@login_required
+@require_POST
+def revoke_access(request, pk):
+    table = get_object_or_404(Table, pk=pk)
+    if table.owner != request.user:
+        return HttpResponseForbidden("Только владелец таблицы может отозвать доступ")
+
+    user = get_object_or_404(User, pk=request.POST.get('user_id'))
+    table.remove_user_access(user)
+    messages.success(request, f"Доступ для {user.email} отозван!")
+    return redirect('share_table', pk=table.pk)
+
+
 @login_required
 def table_detail(request, pk):
     table_obj = get_object_or_404(Table, pk=pk)
     # Проверка прав доступа
-    if table_obj.owner != request.user and not table_obj.rowpermission_set.filter(user=request.user).exists():
+    if table_obj.owner != request.user:
         return HttpResponseForbidden("You don't have permission to access this table.")
-
-    if table_obj.owner == request.user:
-        editable_rows = [row.id for row in table_obj.rows.all()]
-    else:
-        editable_rows = [perm.row.id for perm in RowPermission.objects.filter(
-            user=request.user,
-            can_edit=True,
-            row__in=table_obj.rows.all()
-        )]
 
     queryset = table_obj.rows.all().prefetch_related('cells', 'cells__column')
     # Добавляем аннотации для каждого столбца
     for column in table_obj.columns.all():
         queryset = Row.annotate_for_sorting(queryset, column.id, column.data_type)
 
-    table = DynamicTable(data=queryset, table_obj=table_obj, editable_rows=editable_rows, request=request)
+    table = DynamicTable(data=queryset, table_obj=table_obj, request=request)
     RequestConfig(request).configure(table)
     return render(request, 'tables/table_detail.html', {
         'table_obj': table_obj,

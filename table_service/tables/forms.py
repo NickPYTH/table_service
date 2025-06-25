@@ -6,6 +6,16 @@ from django.core.exceptions import ValidationError
 from .models import Table, Column, Cell, RowPermission, Row
 
 
+class RowPermissionForm(forms.ModelForm):
+    class Meta:
+        model = RowPermission
+        fields = ['user', 'can_edit']
+        widgets = {
+            'user': forms.Select(attrs={'class': 'form-control'}),
+            'can_edit': forms.CheckboxInput(attrs={'class': 'form-check-input'})
+        }
+
+
 class TableForm(forms.ModelForm):
     class Meta:
         model = Table
@@ -22,8 +32,19 @@ class ColumnForm(forms.ModelForm):
 
 
 class ShareTableForm(forms.Form):
-    email = forms.EmailField()
-    can_edit = forms.BooleanField(required=False, initial=True)
+    email = forms.EmailField(label="User Email")
+    can_edit = forms.BooleanField(
+        label="Can Edit",
+        required=False,
+        initial=True,
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
+    )
+    can_delete = forms.BooleanField(
+        label="Can Delete",
+        required=False,
+        initial=False,
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
+    )
 
 
 class RowEditForm(forms.Form):
@@ -63,7 +84,7 @@ class RowEditForm(forms.Form):
                     self.fields[field_name] = forms.DateField(
                         label=column.name,
                         required=False,
-                        initial=initial_value,
+                        initial=str(initial_value),
                         widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
                     )
                 else:  # TEXT по умолчанию

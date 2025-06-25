@@ -15,4 +15,8 @@ urlpatterns = [
     path('<int:table_pk>/delete_column/<int:column_pk>/', views.delete_column, name='delete_column'),
     path('<int:table_pk>/delete_row/<int:row_pk>/', views.delete_row, name='delete_row'),
     path('<int:table_pk>/edit_row/<int:row_pk>/', views.edit_row, name='edit_row'),
+    path('shared/', views.shared_tables_list, name='shared_tables_list'),
+    path('shared/<str:share_token>/', views.shared_table_view, name='shared_table_view'),
+    path('table/<int:pk>/revoke/', views.revoke_access, name='revoke_access'),
+    path('<int:table_pk>/<int:row_pk>/permissions/', views.manage_row_permissions, name='manage_row_permissions'),
 ]

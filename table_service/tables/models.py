@@ -20,6 +20,19 @@ class Table(models.Model):
     def get_absolute_url(self):
         return reverse('table_detail', kwargs={'pk': self.pk})
 
+    def get_shared_url(self):
+        return reverse('shared_table_view', kwargs={'share_token': self.share_token})
+
+    @classmethod
+    def get_shared_tables(cls, user):
+        """Возвращает все таблицы, к которым у пользователя есть доступ"""
+        # Таблицы, где пользователь явно указан в RowPermission
+        shared_via_permissions = cls.objects.filter(
+            rows__permissions__user=user,
+            rows__permissions__created_by_owner=True
+        ).distinct()
+        return shared_via_permissions
+
     def __str__(self):
         return self.title
 
@@ -51,9 +64,38 @@ class Column(models.Model):
 class Row(models.Model):
     table = models.ForeignKey(Table, on_delete=models.CASCADE, related_name='rows')
     order = models.PositiveIntegerField(default=0)
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='created_rows'
+    )
 
     class Meta:
         ordering = ['order']
+
+    def has_edit_permission(self, user):
+        """Проверяет, может ли пользователь редактировать строку"""
+        if self.table.owner == user:
+            return True
+        return self.permissions.filter(user=user, can_edit=True).exists()
+
+    def has_delete_permission(self, user):
+        """Проверяет, может ли пользователь удалять строку"""
+        if self.table.owner == user:
+            return True
+        return self.permissions.filter(user=user, can_delete=True).exists()
+
+    @classmethod
+    def get_visible_rows(cls, user, table):
+        """Возвращает строки, которые пользователь может видеть"""
+        if table.owner == user:
+            return table.rows.all()
+        return table.rows.filter(
+            models.Q(permissions__user=user) |
+            models.Q(created_by=user)
+        )
 
     @property
     def cell_values(self):
@@ -163,16 +205,12 @@ class Cell(models.Model):
 
 
 class RowPermission(models.Model):
-    row = models.ForeignKey(Row, on_delete=models.CASCADE)
+    row = models.ForeignKey(Row, on_delete=models.CASCADE, related_name='permissions')
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     can_edit = models.BooleanField(default=True)
+    can_delete = models.BooleanField(default=False)
+    created_by_owner = models.BooleanField(default=False)  # Разрешение дано владельцем
 
     class Meta:
         unique_together = ('row', 'user')
 
-    def __str__(self):
-        if self.can_edit:
-            arg = 'edit'
-        else:
-            arg = 'view'
-        return f"{self.user.username} can {arg} {self.row}"

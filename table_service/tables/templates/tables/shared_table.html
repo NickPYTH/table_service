@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% load django_tables2 %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>{{ table_obj.title }}</h2>
+    <p class="text-muted">Shared by: {{ table_obj.owner.username }}</p>
+
+    {% if is_owner %}
+        <div class="mb-3">
+            <a href="{% url 'table_detail' pk=table_obj.pk %}" class="btn btn-primary">
+                Manage Table
+            </a>
+        </div>
+    {% endif %}
+
+    {% render_table table %}
+</div>
+{% endblock %}

@@ -16,11 +16,10 @@ class DynamicTable(tables.Table):
         }
         fields = ()  # Будем заполнять динамически
 
-    def __init__(self, *args, table_obj=None, editable_rows=None, request=None, **kwargs):
+    def __init__(self, *args, table_obj=None, request=None, **kwargs):
         self.base_columns.clear()
         self.table_obj = table_obj
         self.request = request
-        self.editable_rows = editable_rows
         if table_obj:
             for column in table_obj.columns.all():
                 self._add_column(column)
@@ -40,7 +39,7 @@ class DynamicTable(tables.Table):
                 verbose_name='',
                 attrs={
                     'td': {'class': 'text-end',
-                           'width': '50px'}
+                           'width': '100px'}
                 }
             )
         super().__init__(*args, **kwargs)
@@ -85,7 +84,7 @@ class DynamicTable(tables.Table):
             )
 
     def render_delete(self, record):
-        if self.table_obj.owner == self.request.user:
+        if (self.table_obj.owner == self.request.user) or (record.has_delete_permission(self.request.user)):
             delete_url = reverse('delete_row',
                                  kwargs={'table_pk': self.table_obj.pk,
                                          'row_pk': record.id
@@ -102,14 +101,26 @@ class DynamicTable(tables.Table):
             )
 
     def render_actions(self, record):
-        if record.id in self.editable_rows:
-            return format_html(
-                '<button class="btn btn-sm btn-outline-primary edit-row-btn" '
-                'data-row-id="{}" data-table-id="{}">✏️</button>',
+        edit = ''
+        if record.has_delete_permission(self.request.user):
+            edit = format_html(
+                '<button class="btn btn-sm btn-outline-primary edit-row-btn" title="Редактировать строку"'
+                'data-row-id="{}" data-table-id="{}"><i class="bi bi-pen"></i></button>',
                 record.id,
                 self.table_obj.pk
             )
-        return ''
+
+        #  Управление правами столбца, только для владельца таблицы
+        if hasattr(self, 'table_obj') and self.table_obj.owner == self.request.user:
+            edit += format_html(
+                '<a href="{}" class="btn btn-sm btn-outline-secondary" title="Настроить разрешения">'
+                '<i class="bi bi-people-fill"></i></a>',
+                reverse('manage_row_permissions', kwargs={
+                    'table_pk': self.table_obj.pk,
+                    'row_pk': record.id
+                })
+            )
+        return edit
 
     def get_column_header(self, column):
         if self.table_obj.owner == self.request.user:
