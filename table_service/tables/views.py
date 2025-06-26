@@ -7,7 +7,7 @@ from django.http import JsonResponse, HttpResponseForbidden
 from django.template.loader import render_to_string
 
 from .models import Table, Column, Row, Cell, RowPermission
-from .forms import TableForm, ColumnForm, ShareTableForm, RowEditForm
+from .forms import TableForm, ColumnForm, RowEditForm, AddRowForm
 from django.contrib import messages
 from django_tables2 import RequestConfig
 from .tables import DynamicTable
@@ -18,6 +18,19 @@ from django.views.decorators.http import require_POST, require_http_methods
 def has_row_edit_permission(user, row):
     return (row.table.owner == user or
             RowPermission.objects.filter(row=row, user=user, can_edit=True).exists())
+
+
+def save_row_data(table, row, form):
+    """Сохраняет данные строки из формы"""
+    for column in table.columns.all():
+        field_name = f'col_{column.id}'
+        value = form.cleaned_data[field_name]
+
+        Cell.objects.update_or_create(
+            row=row,
+            column=column,
+            defaults={'value': value}
+        )
 
 
 @login_required
@@ -84,56 +97,51 @@ def add_row(request, pk):
     if table.owner != request.user and not table.rowpermission_set.filter(user=request.user).exists():
         return HttpResponseForbidden("Вы не можете добавлять строки в эту таблицу")
 
-    # Создаем новую строку
-    row = Row.objects.create(
-        table=table,
-        order=table.rows.count(),  # Порядковый номер новой строки
-        created_by=request.user
-    )
+    if request.method == 'POST':
+        form = AddRowForm(request.POST, table=table)
+        if form.is_valid():
 
-    if table.owner == request.user:
-        created_by_owner = True
-    else:
-        created_by_owner = False
+            # Создаем новую строку
+            row = Row.objects.create(
+                table=table,
+                order=table.rows.count(),  # Порядковый номер новой строки
+                created_by=request.user
+            )
 
-    RowPermission.objects.create(
-        row=row,
-        user=request.user,
-        can_edit=True,
-        can_delete=True,
-        created_by_owner=created_by_owner
-    )
+            if table.owner == request.user:
+                created_by_owner = True
+            else:
+                created_by_owner = False
 
-    # Создаем пустые ячейки для всех колонок
-    for column in table.columns.all():
-        defaults = {
-            'text_value': None,
-            'integer_value': None,
-            'float_value': None,
-            'boolean_value': None,
-            'date_value': None
-        }
+            RowPermission.objects.create(
+                row=row,
+                user=request.user,
+                can_edit=True,
+                can_delete=True,
+                created_by_owner=created_by_owner
+            )
 
-        # Устанавливаем пустое значение в зависимости от типа колонки
-        if column.data_type == Column.ColumnType.INTEGER:
-            defaults['integer_value'] = 0
-        elif column.data_type == Column.ColumnType.FLOAT:
-            defaults['float_value'] = 0.0
-        elif column.data_type == Column.ColumnType.BOOLEAN:
-            defaults['boolean_value'] = False
-        elif column.data_type == Column.ColumnType.DATE:
-            defaults['date_value'] = date.today()
-        else:  # TEXT
-            defaults['text_value'] = ''
+            # Заполняем ячейки данными из формы
+            for column in table.columns.all():
+                field_name = f'col_{column.id}'
+                value = form.cleaned_data.get(field_name)
 
-        Cell.objects.create(
-            row=row,
-            column=column,
-            **defaults
-        )
+                Cell.objects.create(
+                    row=row,
+                    column=column,
+                    value=value
+                )
 
-    messages.success(request, 'Новая строка успешно добавлена')
-    return redirect('table_detail', pk=table.pk)
+            messages.success(request, 'Новая строка успешно добавлена')
+            return JsonResponse({'status': 'success', 'message': 'Новая строка успешно добавлена'})
+        return JsonResponse({'status': 'error', 'errors': form.errors}, status=400)
+    # GET запрос - возвращаем форму
+    form = AddRowForm(table=table)
+    html = render_to_string('tables/add_row/add_row.html', {
+        'form': form,
+        'table': table  # Передаем сам объект таблицы
+    }, request=request)
+    return JsonResponse({'status': 'success', 'html': html})
 
 
 @login_required
@@ -141,9 +149,8 @@ def manage_row_permissions(request, table_pk, row_pk):
     table = get_object_or_404(Table, pk=table_pk)
     row = get_object_or_404(Row, pk=row_pk, table=table)
 
-    # Только владелец таблицы может управлять правами
     if table.owner != request.user:
-        return HttpResponseForbidden("Only table owner can manage permissions")
+        return HttpResponseForbidden("Только владелец таблицы может управлять правами")
 
     if request.method == 'POST':
         user_id = request.POST.get('user_id')
@@ -162,7 +169,7 @@ def manage_row_permissions(request, table_pk, row_pk):
                 'created_by_owner': True
             }
         )
-        messages.success(request, 'Permissions updated successfully')
+        messages.success(request, 'Обновление прав успешно!')
         return redirect('manage_row_permissions', table_pk=table.pk, row_pk=row.pk)
 
     # Получаем текущие разрешения для строки
@@ -217,15 +224,7 @@ def edit_row(request, table_pk, row_pk):
     if request.method == 'POST':
         form = RowEditForm(request.POST, row=row)
         if form.is_valid():
-            for column in table.columns.all():
-                field_name = f'col_{column.id}'
-                value = form.cleaned_data[field_name]
-
-                Cell.objects.update_or_create(
-                    row=row,
-                    column=column,
-                    defaults={'value': value}
-                )
+            save_row_data(table, row, form)
             return JsonResponse({'status': 'success'})
         return JsonResponse({'status': 'error', 'errors': form.errors}, status=400)
 
@@ -237,23 +236,6 @@ def edit_row(request, table_pk, row_pk):
         'row': row
     }, request=request)
     return JsonResponse({'status': 'success', 'html': html})
-
-
-@login_required()
-def shared_table_view(request, share_token):
-    table = get_object_or_404(Table, share_token=share_token)
-
-    # Получаем строки, которые пользователь может видеть
-    rows = Row.get_visible_rows(request.user, table)
-
-    table_view = DynamicTable(data=rows, table_obj=table, request=request)
-    RequestConfig(request).configure(table_view)
-
-    return render(request, 'tables/shared_table.html', {
-        'table_obj': table,
-        'table': table_view,
-        'is_owner': table.owner == request.user
-    })
 
 
 @login_required
@@ -274,11 +256,17 @@ def shared_tables_list(request):
             user=request.user,
             can_edit=True
         ).exists()
+        can_delete = is_owner or RowPermission.objects.filter(
+            row__table=table,
+            user=request.user,
+            can_delete=True
+        ).exists()
 
         tables_with_access.append({
             'table': table,
             'is_owner': is_owner,
             'can_edit': can_edit,
+            'can_delete': can_delete,
             'shared_by': table.owner.username
         })
 
@@ -309,8 +297,7 @@ def table_detail(request, pk):
 
     queryset = table_obj.rows.all().prefetch_related('cells', 'cells__column')
     # Добавляем аннотации для каждого столбца
-    for column in table_obj.columns.all():
-        queryset = Row.annotate_for_sorting(queryset, column.id, column.data_type)
+    queryset = sort_func(queryset, table_obj)
 
     table = DynamicTable(data=queryset, table_obj=table_obj, request=request)
     RequestConfig(request).configure(table)
@@ -318,3 +305,26 @@ def table_detail(request, pk):
         'table_obj': table_obj,
         'table': table,
     })
+
+
+@login_required()
+def shared_table_view(request, share_token):
+    table = get_object_or_404(Table, share_token=share_token)
+
+    # Получаем строки, которые пользователь может видеть
+    rows = Row.get_visible_rows(request.user, table)
+    queryset = sort_func(rows, table)
+    table_view = DynamicTable(data=queryset, table_obj=table, request=request)
+    RequestConfig(request).configure(table_view)
+
+    return render(request, 'tables/shared_table.html', {
+        'table_obj': table,
+        'table': table_view,
+        'is_owner': table.owner == request.user
+    })
+
+
+def sort_func(queryset, table_obj):
+    for column in table_obj.columns.all():
+        queryset = Row.annotate_for_sorting(queryset, column.id, column.data_type)
+    return queryset

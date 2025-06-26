@@ -24,22 +24,13 @@ class DynamicTable(tables.Table):
             for column in table_obj.columns.all():
                 self._add_column(column)
 
-            self.base_columns['delete'] = tables.Column(
-                verbose_name='',
-                orderable=False,
-                empty_values=(),
-                attrs={
-                    'td': {'class': 'text-end',
-                           'width': '50px'}
-                }
-            )
             self.base_columns['actions'] = tables.Column(
                 empty_values=(),
                 orderable=False,
                 verbose_name='',
                 attrs={
                     'td': {'class': 'text-end',
-                           'width': '100px'}
+                           'width': '125px'}
                 }
             )
         super().__init__(*args, **kwargs)
@@ -99,15 +90,34 @@ class DynamicTable(tables.Table):
                 delete_url,
                 csrf_input(self.request)
             )
+        return ''
 
     def render_actions(self, record):
         edit = ''
-        if record.has_delete_permission(self.request.user):
+        if record.has_edit_permission(self.request.user):
             edit = format_html(
-                '<button class="btn btn-sm btn-outline-primary edit-row-btn" title="Редактировать строку"'
-                'data-row-id="{}" data-table-id="{}"><i class="bi bi-pen"></i></button>',
+                '<button '
+                'class="btn btn-sm btn-outline-primary edit-row-btn" '
+                'title="Редактировать строку"'
+                'data-row-id="{}" data-table-id="{}"><i class="bi bi-pen"></i>'
+                '</button>',
                 record.id,
                 self.table_obj.pk
+            )
+        if (self.table_obj.owner == self.request.user) or (record.has_delete_permission(self.request.user)):
+            delete_url = reverse('delete_row',
+                                 kwargs={'table_pk': self.table_obj.pk,
+                                         'row_pk': record.id
+                                         })
+            edit += format_html(
+                '<form method="post" action="{}" style="display:inline;">{}'
+                '<button type="submit" '
+                'class="btn btn-sm btn-danger" '
+                'onclick="return confirm(\'Удалить строку?\');">'
+                '×</button>'
+                '</form>',
+                delete_url,
+                csrf_input(self.request)
             )
 
         #  Управление правами столбца, только для владельца таблицы
@@ -143,6 +153,11 @@ class DynamicTable(tables.Table):
                 column.name,
                 delete_url,
                 csrf_input(self.request)
+            )
+        else:
+            column_name = format_html(
+                '<div>{}</div>',
+                column.name
             )
         # Добавляем иконки сортировки
         sort_param = self.request.GET.get('sort', '')

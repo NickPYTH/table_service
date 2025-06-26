@@ -1,8 +1,12 @@
 {% extends "base.html" %}
 {% load django_tables2 %}
+{% load static %}
 
 {% block content %}
 <div class="container mt-4">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{% static 'css/table_form.css' %}">
+    <link href="{% static 'css/column_tables.css' %}" rel="stylesheet">
     <h2>{{ table_obj.title }}</h2>
     <p class="text-muted">Shared by: {{ table_obj.owner.username }}</p>
 
@@ -15,5 +19,24 @@
     {% endif %}
 
     {% render_table table %}
+    <div class="modal fade" id="rowEditModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Редактирование строки</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="form-container">
+                    <div id="modalContent">
+                        <!-- Форма будет загружена через AJAX -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/row_edit_modal.js' %}"></script>
 {% endblock %}

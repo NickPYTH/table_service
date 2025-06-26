@@ -1,36 +1,37 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container mt-4">
+<div class="d-flex justify-content-between align-items-center mb-4">
     <h1><i class="fas fa-table me-2"></i>Доступные таблицы</h1>
-
-    <div class="list-group mt-3">
-        {% for item in tables %}
-        <div class="list-group-item d-flex justify-content-between align-items-center">
-            <div>
-                <h5 class="mb-1">
-                    <a href="{% if item.can_edit %}{% url 'table_detail' pk=item.table.pk %}{% else %}{{ item.table.get_shared_url }}{% endif %}">
-                        {{ item.table.title }}
-                    </a>
-                </h5>
-                <small class="text-muted">
-                    Shared by: {{ item.shared_by }}
-                    {% if item.can_edit %}(Can edit){% else %}(View only){% endif %}
-                </small>
-            </div>
-            <div>
-                {% if not item.is_owner %}
-                <a href="{{ item.table.get_shared_url }}" class="btn btn-sm btn-outline-secondary">
-                    Открыть Shared View
-                </a>
-                {% endif %}
-            </div>
+</div>
+{% if tables %}
+<div class="list-group">
+    {% for item in tables %}
+    <a href="{% if is_owner %}
+                {% url 'table_detail' pk=item.table.pk %}
+                {% else %}{{ item.table.get_shared_url }}
+                {% endif %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+        <div>
+            <h5 class="mb-1">{{ item.table.title }}</h5>
+            <small class="text-muted">
+                Shared by: {{ item.shared_by }}
+            </small>
         </div>
-        {% empty %}
-        <div class="list-group-item">
-            No shared tables available
+        <div>
+            <span class="badge bg-primary rounded-pill me-2">
+                {% if item.can_edit %}Можно редактировать{% else %}Нелья редактировать{% endif %}
+            </span>
+            <span class="badge bg-danger rounded-pill">
+                {% if item.can_delete %}Можно удалять{% else %}Нельзя удалять{% endif %}
+            </span>
         </div>
-        {% endfor %}
+    </a>
+    {% endfor %}
+{% else %}
+    <div class="alert alert-info">
+        <h4 class="alert-heading">У вас пока нет доступных таблиц</h4>
     </div>
 </div>
+{% endif %}
+
 {% endblock %}

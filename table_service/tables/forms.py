@@ -47,6 +47,71 @@ class ShareTableForm(forms.Form):
     )
 
 
+class AddRowForm(forms.Form):
+    def __init__(self, *args, **kwargs):
+        self.table = kwargs.pop('table', None)
+        super().__init__(*args, **kwargs)
+
+        if self.table:
+            for column in self.table.columns.all():
+                field_name = f'col_{column.id}'
+                initial_value = Cell.get_default_value(column.data_type)
+                if column.data_type == Column.ColumnType.INTEGER:
+                    self.fields[field_name] = forms.IntegerField(
+                        label=column.name,
+                        required=False,
+                        initial=initial_value,
+                        widget=forms.NumberInput(attrs={
+                            'class': 'form-control',
+                            'step': '1',
+                            'min': '-2147483648',
+                            'max': '2147483647',
+                            'placeholder': 'Введите целое число'
+                        }),
+                    )
+                elif column.data_type == Column.ColumnType.FLOAT:
+                    self.fields[field_name] = forms.FloatField(
+                        label=column.name,
+                        required=False,
+                        initial=initial_value,
+                        widget=forms.NumberInput(attrs={
+                            'class': 'form-control',
+                            'step': '0.01',
+                            'placeholder': 'Введите число с плавающей точкой'
+                        }),
+                    )
+                elif column.data_type == Column.ColumnType.BOOLEAN:
+                    self.fields[field_name] = forms.BooleanField(
+                        label=column.name,
+                        initial=initial_value,
+                        required=False,
+                        widget=forms.CheckboxInput(attrs={
+                            'class': 'form-check-input'
+                        })
+                    )
+                elif column.data_type == Column.ColumnType.DATE:
+                    self.fields[field_name] = forms.DateField(
+                        label=column.name,
+                        required=False,
+                        initial=str(initial_value),
+                        widget=forms.DateInput(attrs={
+                            'type': 'date',
+                            'class': 'form-control',
+                            'placeholder': 'Выберите дату'
+                        }),
+                    )
+                else:  # TEXT
+                    self.fields[field_name] = forms.CharField(
+                        label=column.name,
+                        required=False,
+                        initial=initial_value,
+                        widget=forms.TextInput(attrs={
+                            'class': 'form-control',
+                            'placeholder': 'Введите текст'
+                        }),
+                    )
+
+
 class RowEditForm(forms.Form):
     def __init__(self, *args, **kwargs):
         self.row = kwargs.pop('row', None)
@@ -65,34 +130,54 @@ class RowEditForm(forms.Form):
                         label=column.name,
                         required=False,
                         initial=initial_value,
-                        widget=forms.NumberInput(attrs={'class': 'form-control'}),
+                        widget=forms.NumberInput(attrs={
+                            'class': 'form-control',
+                            'step': '1',
+                            'min': '-2147483648',
+                            'max': '2147483647',
+                            'placeholder': 'Введите целое число'
+                        }),
                     )
                 elif column.data_type == Column.ColumnType.FLOAT:
                     self.fields[field_name] = forms.FloatField(
                         label=column.name,
                         required=False,
                         initial=initial_value,
-                        widget=forms.NumberInput(attrs={'class': 'form-control'}),
+                        widget=forms.NumberInput(attrs={
+                            'class': 'form-control',
+                            'step': '0.01',
+                            'placeholder': 'Введите число с плавающей точкой'
+                        }),
                     )
                 elif column.data_type == Column.ColumnType.BOOLEAN:
                     self.fields[field_name] = forms.BooleanField(
                         label=column.name,
                         required=False,
                         initial=initial_value,
+                        widget=forms.CheckboxInput(attrs={
+                            'class': 'form-check-input'
+                        })
                     )
                 elif column.data_type == Column.ColumnType.DATE:
                     self.fields[field_name] = forms.DateField(
                         label=column.name,
                         required=False,
                         initial=str(initial_value),
-                        widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+                        widget=forms.DateInput(attrs={
+                            'type': 'date',
+                            'class': 'form-control',
+                            'placeholder': 'Выберите дату'
+                        }),
                     )
                 else:  # TEXT по умолчанию
                     self.fields[field_name] = forms.CharField(
                         label=column.name,
                         required=False,
                         initial=initial_value,
-                        widget=forms.TextInput(attrs={'class': 'form-control'}),
+                        widget=forms.TextInput(attrs={
+                            'class': 'form-control',
+                            'placeholder': 'Введите текст'
+                        }),
                     )
 
     def clean(self):

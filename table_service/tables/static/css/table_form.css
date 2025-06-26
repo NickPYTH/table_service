@@ -1,0 +1,36 @@
+/* Общие стили для полей формы */
+.modal-content .form-control {
+    margin-bottom: 1rem;
+    border-radius: 0.25rem;
+    border: 1px solid #ced4da;
+    padding: 0.375rem 0.75rem;
+}
+
+/* Чекбокс для булевых значений */
+.modal-content .form-check {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.modal-content .form-check-input {
+    width: 1.2em;
+    height: 1.2em;
+    margin-right: 0.5rem;
+    margin-top: 0;
+}
+
+/* Кнопки в форме */
+.modal-content .form-actions {
+    margin-top: 1.5rem;
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+}
+
+/* Заголовки полей */
+.modal-content label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}

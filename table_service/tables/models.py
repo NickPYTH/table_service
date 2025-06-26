@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from django.urls import reverse
 from django.utils.crypto import get_random_string
 from django.db.models import Case, When, Value, IntegerField, FloatField, BooleanField, DateField, F, TextField
+from datetime import date
 
 
 class Table(models.Model):
@@ -168,6 +169,18 @@ class Cell(models.Model):
 
     class Meta:
         unique_together = ('row', 'column')
+
+    @staticmethod
+    def get_default_value(data_type):
+        """Возвращает значение по умолчанию для типа данных"""
+        defaults = {
+            Column.ColumnType.INTEGER: 0,
+            Column.ColumnType.FLOAT: 0.0,
+            Column.ColumnType.BOOLEAN: False,
+            Column.ColumnType.DATE: date.today(),
+            Column.ColumnType.TEXT: ''
+        }
+        return defaults.get(data_type, '')
 
     @property
     def value(self):
