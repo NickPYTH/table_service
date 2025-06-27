@@ -24,13 +24,15 @@ class Table(models.Model):
     def get_shared_url(self):
         return reverse('shared_table_view', kwargs={'share_token': self.share_token})
 
+    def get_url_for_users(self):
+        return f'/shared/{self.share_token}'
+
     @classmethod
     def get_shared_tables(cls, user):
         """Возвращает все таблицы, к которым у пользователя есть доступ"""
         # Таблицы, где пользователь явно указан в RowPermission
         shared_via_permissions = cls.objects.filter(
             rows__permissions__user=user,
-            rows__permissions__created_by_owner=True
         ).distinct()
         return shared_via_permissions
 
@@ -87,6 +89,14 @@ class Row(models.Model):
         if self.table.owner == user:
             return True
         return self.permissions.filter(user=user, can_delete=True).exists()
+
+    def has_manage_permission(self, user):
+        """Проверяет, может ли пользователь управлять правами на строку"""
+        if self.table.owner == user:
+            return True
+        if self.created_by and self.created_by == user:
+            return True
+        return False
 
     @classmethod
     def get_visible_rows(cls, user, table):
@@ -152,9 +162,6 @@ class Row(models.Model):
             return queryset.annotate(
                 **{f'sort_value_{column_id}': models.Subquery(subquery, output_field=TextField())}
             )
-
-    def __str__(self):
-        return f"Row {self.order} in {self.table.title}"
 
 
 class Cell(models.Model):
@@ -222,7 +229,6 @@ class RowPermission(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     can_edit = models.BooleanField(default=True)
     can_delete = models.BooleanField(default=False)
-    created_by_owner = models.BooleanField(default=False)  # Разрешение дано владельцем
 
     class Meta:
         unique_together = ('row', 'user')

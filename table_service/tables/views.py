@@ -14,12 +14,6 @@ from .tables import DynamicTable
 from django.views.decorators.http import require_POST, require_http_methods
 
 
-# Проверка прав на редактирование конкретной строки
-def has_row_edit_permission(user, row):
-    return (row.table.owner == user or
-            RowPermission.objects.filter(row=row, user=user, can_edit=True).exists())
-
-
 def save_row_data(table, row, form):
     """Сохраняет данные строки из формы"""
     for column in table.columns.all():
@@ -90,90 +84,43 @@ def add_column(request, pk):
 
 
 @login_required
-def add_row(request, pk):
-    table = get_object_or_404(Table, pk=pk)
-
-    # Проверка прав
-    if table.owner != request.user and not table.rowpermission_set.filter(user=request.user).exists():
-        return HttpResponseForbidden("Вы не можете добавлять строки в эту таблицу")
-
-    if request.method == 'POST':
-        form = AddRowForm(request.POST, table=table)
-        if form.is_valid():
-
-            # Создаем новую строку
-            row = Row.objects.create(
-                table=table,
-                order=table.rows.count(),  # Порядковый номер новой строки
-                created_by=request.user
-            )
-
-            if table.owner == request.user:
-                created_by_owner = True
-            else:
-                created_by_owner = False
-
-            RowPermission.objects.create(
-                row=row,
-                user=request.user,
-                can_edit=True,
-                can_delete=True,
-                created_by_owner=created_by_owner
-            )
-
-            # Заполняем ячейки данными из формы
-            for column in table.columns.all():
-                field_name = f'col_{column.id}'
-                value = form.cleaned_data.get(field_name)
-
-                Cell.objects.create(
-                    row=row,
-                    column=column,
-                    value=value
-                )
-
-            messages.success(request, 'Новая строка успешно добавлена')
-            return JsonResponse({'status': 'success', 'message': 'Новая строка успешно добавлена'})
-        return JsonResponse({'status': 'error', 'errors': form.errors}, status=400)
-    # GET запрос - возвращаем форму
-    form = AddRowForm(table=table)
-    html = render_to_string('tables/add_row/add_row.html', {
-        'form': form,
-        'table': table  # Передаем сам объект таблицы
-    }, request=request)
-    return JsonResponse({'status': 'success', 'html': html})
-
-
-@login_required
 def manage_row_permissions(request, table_pk, row_pk):
     table = get_object_or_404(Table, pk=table_pk)
     row = get_object_or_404(Row, pk=row_pk, table=table)
 
-    if table.owner != request.user:
+    if not row.has_manage_permission(request.user):
         return HttpResponseForbidden("Только владелец таблицы может управлять правами")
 
     if request.method == 'POST':
-        user_id = request.POST.get('user_id')
-        can_edit = 'can_edit' in request.POST
-        can_delete = 'can_delete' in request.POST
+        if 'update_submit' in request.POST:
+            # Обработка существующих пользователей
+            for perm in row.permissions.all():
+                user_id = str(perm.user.id)
+                perm.can_edit = f'can_edit_{user_id}' in request.POST
+                perm.can_delete = f'can_delete_{user_id}' in request.POST
+                perm.save()
 
-        user = get_object_or_404(User, pk=user_id)
-
-        # Обновляем или создаем разрешение
-        RowPermission.objects.update_or_create(
-            row=row,
-            user=user,
-            defaults={
-                'can_edit': can_edit,
-                'can_delete': can_delete,
-                'created_by_owner': True
-            }
-        )
+        # Обработка новых пользователей
+        if 'add_users_submit' in request.POST:
+            new_users = request.POST.getlist('new_users')
+            if new_users:
+                can_edit = 'new_can_edit' in request.POST
+                can_delete = 'new_can_delete' in request.POST
+                for user_id in new_users:
+                    user = get_object_or_404(User, pk=user_id)
+                    RowPermission.objects.update_or_create(
+                        row=row,
+                        user=user,
+                        defaults={
+                            'can_edit': can_edit,
+                            'can_delete': can_delete,
+                        }
+                    )
         messages.success(request, 'Обновление прав успешно!')
         return redirect('manage_row_permissions', table_pk=table.pk, row_pk=row.pk)
 
     # Получаем текущие разрешения для строки
-    permissions = row.permissions.filter(created_by_owner=True)
+    permissions = row.permissions.filter()
     all_users = User.objects.exclude(pk=table.owner.pk)
 
     return render(request, 'tables/manage_permissions.html', {
@@ -206,8 +153,8 @@ def delete_row(request, table_pk, row_pk):
     row = get_object_or_404(Row, pk=row_pk, table=table)
 
     # Проверка прав
-    if table.owner != request.user:
-        return HttpResponseForbidden("Вы не можете удалять строки из этой таблицы")
+    if not row.has_delete_permission(request.user):
+        return JsonResponse({'status': 'error', 'message': 'Нет прав на удаление'}, status=403)
 
     row.delete()
     messages.success(request, 'Строка успешно удалена')
@@ -218,13 +165,14 @@ def delete_row(request, table_pk, row_pk):
 def edit_row(request, table_pk, row_pk):
     table = get_object_or_404(Table, pk=table_pk)
     row = get_object_or_404(Row, pk=row_pk, table=table)
-    if not has_row_edit_permission(request.user, row):
+    if not row.has_edit_permission(request.user):
         return JsonResponse({'status': 'error', 'message': 'Нет прав на редактирование'}, status=403)
 
     if request.method == 'POST':
         form = RowEditForm(request.POST, row=row)
         if form.is_valid():
             save_row_data(table, row, form)
+            messages.success(request, 'Строка успешно отредактирована!')
             return JsonResponse({'status': 'success'})
         return JsonResponse({'status': 'error', 'errors': form.errors}, status=400)
 
@@ -234,6 +182,55 @@ def edit_row(request, table_pk, row_pk):
         'form': form,
         'table': table,
         'row': row
+    }, request=request)
+    return JsonResponse({'status': 'success', 'html': html})
+
+
+@login_required
+def add_row(request, pk):
+    table = get_object_or_404(Table, pk=pk)
+
+    # Проверка прав
+
+
+    if request.method == 'POST':
+        form = AddRowForm(request.POST, table=table)
+        if form.is_valid():
+
+            # Создаем новую строку
+            row = Row.objects.create(
+                table=table,
+                order=table.rows.count(),  # Порядковый номер новой строки
+                created_by=request.user
+            )
+
+            RowPermission.objects.create(
+                row=row,
+                user=request.user,
+                can_edit=True,
+                can_delete=True,
+            )
+
+            # Заполняем ячейки данными из формы
+            for column in table.columns.all():
+                field_name = f'col_{column.id}'
+                value = form.cleaned_data.get(field_name)
+
+                Cell.objects.create(
+                    row=row,
+                    column=column,
+                    value=value
+                )
+
+            messages.success(request, 'Новая строка успешно добавлена')
+            return JsonResponse({'status': 'success'})
+        return JsonResponse({'status': 'error', 'errors': form.errors}, status=400)
+
+    # GET запрос - возвращаем форму
+    form = AddRowForm(table=table)
+    html = render_to_string('tables/add_row/add_row.html', {
+        'form': form,
+        'table': table  # Передаем сам объект таблицы
     }, request=request)
     return JsonResponse({'status': 'success', 'html': html})
 
@@ -320,7 +317,7 @@ def shared_table_view(request, share_token):
     return render(request, 'tables/shared_table.html', {
         'table_obj': table,
         'table': table_view,
-        'is_owner': table.owner == request.user
+        'is_owner': table.owner == request.user,
     })
 
 

@@ -93,18 +93,17 @@ class DynamicTable(tables.Table):
         return ''
 
     def render_actions(self, record):
-        edit = ''
+        edit = format_html('')
         if record.has_edit_permission(self.request.user):
-            edit = format_html(
-                '<button '
-                'class="btn btn-sm btn-outline-primary edit-row-btn" '
+            edit += format_html(
+                '<a class="btn btn-sm btn-outline-primary edit-row-btn" '
                 'title="Редактировать строку"'
                 'data-row-id="{}" data-table-id="{}"><i class="bi bi-pen"></i>'
-                '</button>',
+                '</a>',
                 record.id,
                 self.table_obj.pk
             )
-        if (self.table_obj.owner == self.request.user) or (record.has_delete_permission(self.request.user)):
+        if record.has_delete_permission(self.request.user):
             delete_url = reverse('delete_row',
                                  kwargs={'table_pk': self.table_obj.pk,
                                          'row_pk': record.id
@@ -120,8 +119,7 @@ class DynamicTable(tables.Table):
                 csrf_input(self.request)
             )
 
-        #  Управление правами столбца, только для владельца таблицы
-        if hasattr(self, 'table_obj') and self.table_obj.owner == self.request.user:
+        if record.has_manage_permission(self.request.user):
             edit += format_html(
                 '<a href="{}" class="btn btn-sm btn-outline-secondary" title="Настроить разрешения">'
                 '<i class="bi bi-people-fill"></i></a>',

@@ -6,16 +6,6 @@ from django.core.exceptions import ValidationError
 from .models import Table, Column, Cell, RowPermission, Row
 
 
-class RowPermissionForm(forms.ModelForm):
-    class Meta:
-        model = RowPermission
-        fields = ['user', 'can_edit']
-        widgets = {
-            'user': forms.Select(attrs={'class': 'form-control'}),
-            'can_edit': forms.CheckboxInput(attrs={'class': 'form-check-input'})
-        }
-
-
 class TableForm(forms.ModelForm):
     class Meta:
         model = Table

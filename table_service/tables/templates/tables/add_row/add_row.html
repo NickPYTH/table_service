@@ -2,15 +2,10 @@
     {% csrf_token %}
     <div class="modal-body">
         {% for field in form %}
-        <div class="mb-3">
-            <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
-            {{ field }}
-            {% if field.errors %}
-            <div class="invalid-feedback d-block">
-                {{ field.errors|join:", " }}
+            <div class="mb-3">
+                <label class="form-label">{{ field.label }}</label>
+                {{ field }}
             </div>
-            {% endif %}
-        </div>
         {% endfor %}
     </div>
     <div class="modal-footer">
