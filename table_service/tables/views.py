@@ -158,7 +158,11 @@ def delete_row(request, table_pk, row_pk):
 
     row.delete()
     messages.success(request, 'Строка успешно удалена')
-    return redirect('table_detail', pk=table.pk)
+
+    if request.user == table.owner:
+        return redirect('table_detail', pk=table.pk)
+    else:
+        return redirect('shared_table_view', share_token=table.share_token)
 
 
 @login_required
@@ -190,9 +194,6 @@ def edit_row(request, table_pk, row_pk):
 def add_row(request, pk):
     table = get_object_or_404(Table, pk=pk)
 
-    # Проверка прав
-
-
     if request.method == 'POST':
         form = AddRowForm(request.POST, table=table)
         if form.is_valid():
@@ -210,6 +211,22 @@ def add_row(request, pk):
                 can_edit=True,
                 can_delete=True,
             )
+
+            user_filial = request.user.profile.employee.id_filial
+
+            if user_filial:
+                colleagues = User.objects.filter(
+                    profile__employee__id_filial=user_filial
+                ).exclude(id=request.user.id)
+
+                # Создаем права для всех коллег
+                for colleague in colleagues:
+                    RowPermission.objects.create(
+                        row=row,
+                        user=colleague,
+                        can_edit=True,  # Могут редактировать
+                        can_delete=False  # Но не могут удалять
+                    )
 
             # Заполняем ячейки данными из формы
             for column in table.columns.all():
@@ -271,7 +288,7 @@ def shared_tables_list(request):
         'tables': tables_with_access
     })
 
-
+#НУЖНО ПОЛНОСТЬЮ ПЕРЕДЕЛАТЬ
 @login_required
 @require_POST
 def revoke_access(request, pk):
