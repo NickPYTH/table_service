@@ -1,9 +1,65 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.db.models.functions import Concat
 from django.urls import reverse
 from django.utils.crypto import get_random_string
-from django.db.models import Case, When, Value, IntegerField, FloatField, BooleanField, DateField, F, TextField
+from django.db.models import IntegerField, FloatField, BooleanField, DateField, F, TextField, Value
 from datetime import date
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
+
+class Filial(models.Model):
+    id = models.AutoField(primary_key=True)
+    name = models.CharField()
+    code = models.IntegerField(null=True, blank=True)
+
+
+class Employee(models.Model):
+    id = models.AutoField(primary_key=True)
+    id_filial = models.ForeignKey(
+        Filial,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='employees'
+    )
+    id_department = models.IntegerField(null=True, blank=True)
+    id_post = models.IntegerField(null=True, blank=True)
+    id_poststaff = models.IntegerField(null=True, blank=True)
+    tabnum = models.IntegerField(unique=True)  # Табельный номер
+    firstname = models.CharField(max_length=50)
+    secondname = models.CharField(max_length=50)
+    lastname = models.CharField(max_length=50)
+    setdate = models.DateField(null=True, blank=True)
+    enddate = models.DateField(null=True, blank=True)
+    gesch = models.SmallIntegerField(null=True, blank=True)
+    kostl = models.CharField(max_length=10, null=True, blank=True)
+
+
+class Profile(models.Model):
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE)
+    employee = models.OneToOneField(
+        Employee,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='profile'
+    )
+
+
+# Сигналы для автоматического создания профиля при создании пользователя
+@receiver(post_save, sender=User)
+def create_user_profile(sender, instance, created, **kwargs):
+    if created:
+        Profile.objects.create(user=instance)
+
+
+@receiver(post_save, sender=User)
+def save_user_profile(sender, instance, **kwargs):
+    instance.profile.save()
 
 
 class Table(models.Model):
@@ -109,6 +165,38 @@ class Row(models.Model):
         )
 
     @property
+    def user_values(self):
+        if not hasattr(self, '_user_values_cache'):
+            # Получаем пользователя через создателя строки (если он есть)
+            user = None
+            if self.created_by and hasattr(self.created_by, 'profile') and self.created_by.profile.employee:
+                user = self.created_by.profile.employee
+
+            self._user_values_cache = {
+                'id': user.id if user else None,
+                'firstname': user.firstname if user else '',
+                'secondname': user.secondname if user else '',
+                'lastname': user.lastname if user else '',
+                'full_name': f'{user.secondname} {user.firstname} {user.lastname}' if user else ''
+            }
+        return self._user_values_cache
+
+    @property
+    def filial_values(self):
+        if not hasattr(self, '_filial_values_cache'):
+            # Получаем филиал через создателя строки (если он есть)
+            filial = None
+            if self.created_by and hasattr(self.created_by, 'profile') and self.created_by.profile.employee:
+                filial = self.created_by.profile.employee.id_filial
+
+            self._filial_values_cache = {
+                'id': filial.id if filial else None,
+                'name': filial.name if filial else '',
+                'code': filial.code if filial else None
+            }
+        return self._filial_values_cache
+
+    @property
     def cell_values(self):
         if not hasattr(self, '_cell_values_cache'):
             cells = self.cells.select_related('column').all()
@@ -155,6 +243,17 @@ class Row(models.Model):
                 **{f'sort_value_{column_id}': models.Subquery(subquery, output_field=DateField())}
             )
         else:  # TEXT
+            queryset = queryset.annotate(
+                user_full_name=Concat(
+                    F('created_by__profile__employee__secondname'),
+                    Value(' '),
+                    F('created_by__profile__employee__firstname'),
+                    Value(' '),
+                    F('created_by__profile__employee__lastname'),
+                    output_field=TextField()
+                )
+            )
+
             subquery = Cell.objects.filter(
                 row=models.OuterRef('pk'),
                 column_id=column_id

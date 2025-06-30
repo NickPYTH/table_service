@@ -1,5 +1,5 @@
-from datetime import date
-
+from django.db.models import F, Value, TextField
+from django.db.models.functions import Concat
 from django.contrib.auth.models import User
 from django.shortcuts import render, redirect, get_object_or_404, reverse
 from django.contrib.auth.decorators import login_required
@@ -322,6 +322,17 @@ def shared_table_view(request, share_token):
 
 
 def sort_func(queryset, table_obj):
+    queryset = queryset.annotate(
+        user_full_name=Concat(
+            F('created_by__profile__employee__secondname'),
+            Value(' '),
+            F('created_by__profile__employee__firstname'),
+            Value(' '),
+            F('created_by__profile__employee__lastname'),
+            output_field=TextField()
+        ),
+        filial_name=F('created_by__profile__employee__id_filial__name')
+    )
     for column in table_obj.columns.all():
         queryset = Row.annotate_for_sorting(queryset, column.id, column.data_type)
     return queryset

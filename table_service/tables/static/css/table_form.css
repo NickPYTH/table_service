@@ -34,3 +34,10 @@
     margin-bottom: 0.5rem;
     font-weight: 500;
 }
+
+#clickable-btns {
+    width: 57%;
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 10px;
+}

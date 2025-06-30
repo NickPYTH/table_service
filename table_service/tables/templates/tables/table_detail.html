@@ -12,7 +12,7 @@
 <p>Owner: {{ table_obj.owner }}</p>
 
 {% if table_obj.owner == request.user %}
-    <div>
+    <div id="clickable-btns">
         <a href="{% url 'add_column' table_obj.pk %}" class="btn btn-primary ms-2">
             <i class="fas fa-columns me-1"></i> Добавить столбец
         </a>
@@ -21,6 +21,9 @@
         </a>
         <a href="{% url 'delete_table' table_obj.pk %}" class="btn btn-danger">
             Удалить таблицу
+        </a>
+        <a href="{{ table_obj.get_shared_url }}" class="btn btn-primary">
+            Поделиться таблицей
         </a>
     </div>
 {% endif %}

@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="{% static 'css/table_form.css' %}">
     <link href="{% static 'css/column_tables.css' %}" rel="stylesheet">
     <h2>{{ table_obj.title }}</h2>
-    <p class="text-muted">Shared by: {{ table_obj.owner.username }}</p>
+    <p class="text-muted">Поделился: {{ table_obj.owner.username }}</p>
 
     <div class="mb-3">
         {% if is_owner %}

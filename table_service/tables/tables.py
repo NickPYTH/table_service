@@ -6,6 +6,10 @@ from .models import Row, Column
 
 
 class DynamicTable(tables.Table):
+    SORT_ICON = 'fa-solid fa-sort'
+    SORT_UP_ICON = 'fa-solid fa-sort-up'
+    SORT_DOWN_ICON = 'fa-solid fa-sort-down'
+
     class Meta:
         model = Row
         attrs = {
@@ -21,6 +25,25 @@ class DynamicTable(tables.Table):
         self.table_obj = table_obj
         self.request = request
         if table_obj:
+            self.base_columns['filial'] = tables.Column(
+                verbose_name=self.get_column_header(None, is_filial=True),
+                accessor=f'filial_values.name',
+                attrs={
+                    'td': {'class': 'text-center',
+                           'width': '125px'}
+                },
+                order_by='filial_name'
+            )
+
+            self.base_columns['user'] = tables.Column(
+                verbose_name=self.get_column_header(None, is_user=True),
+                accessor=f'user_values.full_name',
+                attrs={
+                    'td': {'class': 'text-center'}
+                },
+                order_by='user_full_name'
+            )
+
             for column in table_obj.columns.all():
                 self._add_column(column)
 
@@ -29,7 +52,7 @@ class DynamicTable(tables.Table):
                 orderable=False,
                 verbose_name='',
                 attrs={
-                    'td': {'class': 'text-end',
+                    'td': {'class': 'text-center',
                            'width': '125px'}
                 }
             )
@@ -44,14 +67,14 @@ class DynamicTable(tables.Table):
             self.base_columns[col_name] = tables.Column(
                 verbose_name=self.get_column_header(column),
                 accessor=accessor,
-                attrs={'td': {'class': 'text-end'}},
+                attrs={'td': {'class': 'text-center'}},
                 order_by=f'sort_value_{column.id}'
             )
         if column.data_type == Column.ColumnType.FLOAT:
             self.base_columns[col_name] = tables.Column(
                 verbose_name=self.get_column_header(column),
                 accessor=accessor,
-                attrs={'td': {'class': 'text-end'}},
+                attrs={'td': {'class': 'text-center'}},
                 order_by=f'sort_value_{column.id}'
             )
         elif column.data_type == Column.ColumnType.BOOLEAN:
@@ -65,12 +88,14 @@ class DynamicTable(tables.Table):
             self.base_columns[col_name] = tables.DateColumn(
                 verbose_name=self.get_column_header(column),
                 accessor=accessor,
+                attrs={'td': {'class': 'text-center'}},
                 order_by=f'sort_value_{column.id}'
             )
         else:  # TEXT по умолчанию
             self.base_columns[col_name] = tables.Column(
                 verbose_name=self.get_column_header(column),
                 accessor=accessor,
+                attrs={'td': {'class': 'text-center'}},
                 order_by=f'sort_value_{column.id}'
             )
 
@@ -113,7 +138,7 @@ class DynamicTable(tables.Table):
                 '<button type="submit" '
                 'class="btn btn-sm btn-danger" '
                 'onclick="return confirm(\'Удалить строку?\');">'
-                '×</button>'
+                '<i class="bi bi-x-lg"></i></button>'
                 '</form>',
                 delete_url,
                 csrf_input(self.request)
@@ -130,13 +155,14 @@ class DynamicTable(tables.Table):
             )
         return edit
 
-    def get_column_header(self, column):
-        if self.table_obj.owner == self.request.user:
+    def get_column_header(self, column=None, is_user=False, is_filial=False):
+        edit = format_html('')
+        if column and self.table_obj.owner == self.request.user:
             delete_url = reverse('delete_column',
                                  kwargs={'table_pk': self.table_obj.pk,
                                          'column_pk': column.id
                                          })
-            column_name = format_html(
+            edit += format_html(
                 '<div class="d-flex justify-content-between align-items-center">'
                 '<div>{}</div>'
                 '<div>'
@@ -152,31 +178,79 @@ class DynamicTable(tables.Table):
                 delete_url,
                 csrf_input(self.request)
             )
-        else:
-            column_name = format_html(
-                '<div>{}</div>',
-                column.name
-            )
-        # Добавляем иконки сортировки
-        sort_param = self.request.GET.get('sort', '')
-        current_sort = f"col_{column.id}"
+        elif column:
+            edit += format_html('<div>{}</div>', column.name)
+        elif is_user:
+            edit += format_html('<div>Пользователь</div>')
+        elif is_filial:
+            edit += format_html('<div>Филиал</div>')
 
-        if sort_param.lstrip('-') == current_sort:
+        sort_icon = self.render_sort_icon(column, is_user=is_user, is_filial=is_filial)
+        return format_html('{} {}', sort_icon, edit)
+
+
+    def _get_sort_params(self, column=None, is_user=False, is_filial=False):
+        if column:  # Для обычных колонок таблицы
+            return {
+                'sort_field': f'col_{column.id}',
+                'asc_sort': f'col_{column.id}',
+                'desc_sort': f'-col_{column.id}'
+            }
+        elif is_user:  # Для колонки пользователя
+            return {
+                'sort_field': 'user',
+                'asc_sort': 'user',
+                'desc_sort': '-user'
+            }
+        elif is_filial:  # Для колонки филиала
+            return {
+                'sort_field': 'filial',
+                'asc_sort': 'filial',
+                'desc_sort': '-filial'
+            }
+        return None
+
+    def render_sort_icon(self, column=None, is_user=False, is_filial=False):
+        sort_params = None
+
+        if column:
+            sort_params = self._get_sort_params(column=column)
+        elif is_user:
+            sort_params = self._get_sort_params(is_user=is_user)  # Для колонки user
+        elif is_filial:
+            sort_params = self._get_sort_params(is_filial=is_filial)  # Для колонки filial
+
+        if not sort_params:
+            return ''
+
+        sort_field = sort_params['sort_field']
+        asc_sort = sort_params['asc_sort']
+        desc_sort = sort_params['desc_sort']
+
+        sort_param = self.request.GET.get('sort', '')
+
+        params = self.request.GET.copy()
+
+        if sort_param.lstrip('-') == sort_field:
             if sort_param.startswith('-'):
-                # Сортировка по убыванию
+                if 'sort' in params:
+                    del params['sort']
                 return format_html(
-                    '{} <i class="bi bi-sort-down-alt text-primary"></i>',
-                    column_name
+                    '<a href="?{}" class="sort-link"><i class="{}"></i></a>',
+                    params.urlencode(),
+                    self.SORT_DOWN_ICON
                 )
             else:
-                # Сортировка по возрастанию
+                params['sort'] = desc_sort
                 return format_html(
-                    '{} <i class="bi bi-sort-up text-primary"></i>',
-                    column_name
+                    '<a href="?{}" class="sort-link"><i class="{}"></i></a>',
+                    params.urlencode(),
+                    self.SORT_UP_ICON
                 )
         else:
-            # Нет сортировки
+            params['sort'] = asc_sort
             return format_html(
-                '{} <i class="bi bi-filter text-muted"></i>',
-                column_name
+                '<a href="?{}" class="sort-link"><i class="{}"></i></a>',
+                params.urlencode(),
+                self.SORT_ICON
             )
