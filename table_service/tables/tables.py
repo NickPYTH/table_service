@@ -29,8 +29,7 @@ class DynamicTable(tables.Table):
                 verbose_name=self.get_column_header(None, is_filial=True),
                 accessor=f'filial_values.name',
                 attrs={
-                    'td': {'class': 'text-center',
-                           'width': '125px'}
+                    'td': {'class': 'text-center'}
                 },
                 order_by='filial_name'
             )
@@ -187,7 +186,6 @@ class DynamicTable(tables.Table):
 
         sort_icon = self.render_sort_icon(column, is_user=is_user, is_filial=is_filial)
         return format_html('{} {}', sort_icon, edit)
-
 
     def _get_sort_params(self, column=None, is_user=False, is_filial=False):
         if column:  # Для обычных колонок таблицы

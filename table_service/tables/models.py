@@ -17,13 +17,7 @@ class Filial(models.Model):
 
 class Employee(models.Model):
     id = models.AutoField(primary_key=True)
-    id_filial = models.ForeignKey(
-        Filial,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='employees'
-    )
+    id_filial = models.IntegerField(null=True, blank=True)
     id_department = models.IntegerField(null=True, blank=True)
     id_post = models.IntegerField(null=True, blank=True)
     id_poststaff = models.IntegerField(null=True, blank=True)
@@ -48,18 +42,6 @@ class Profile(models.Model):
         blank=True,
         related_name='profile'
     )
-
-
-# Сигналы для автоматического создания профиля при создании пользователя
-@receiver(post_save, sender=User)
-def create_user_profile(sender, instance, created, **kwargs):
-    if created:
-        Profile.objects.create(user=instance)
-
-
-@receiver(post_save, sender=User)
-def save_user_profile(sender, instance, **kwargs):
-    instance.profile.save()
 
 
 class Table(models.Model):
@@ -159,10 +141,21 @@ class Row(models.Model):
         """Возвращает строки, которые пользователь может видеть"""
         if table.owner == user:
             return table.rows.all()
-        return table.rows.filter(
-            models.Q(permissions__user=user) |
-            models.Q(created_by=user)
-        )
+
+        result = models.Q(permissions__user=user) | models.Q(created_by=user)
+
+        user_filial = None
+        if hasattr(user, 'profile') and user.profile.employee:
+            user_filial = user.profile.employee.id_filial
+
+        # Если у пользователя есть филиал, добавляем условие для коллег из того же филиала
+        if user_filial:
+            colleagues = User.objects.filter(
+                profile__employee__id_filial=user_filial
+            ).values_list('id', flat=True)
+            result |= models.Q(created_by__in=colleagues)
+
+        return table.rows.filter(result).distinct()
 
     @property
     def user_values(self):
@@ -187,7 +180,8 @@ class Row(models.Model):
             # Получаем филиал через создателя строки (если он есть)
             filial = None
             if self.created_by and hasattr(self.created_by, 'profile') and self.created_by.profile.employee:
-                filial = self.created_by.profile.employee.id_filial
+                filial_id = self.created_by.profile.employee.id_filial
+                filial = Filial.objects.get(id=filial_id)
 
             self._filial_values_cache = {
                 'id': filial.id if filial else None,

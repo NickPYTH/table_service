@@ -1,4 +1,4 @@
-from django.db.models import F, Value, TextField
+from django.db.models import F, Value, TextField, Subquery, OuterRef
 from django.db.models.functions import Concat
 from django.contrib.auth.models import User
 from django.shortcuts import render, redirect, get_object_or_404, reverse
@@ -6,7 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponseForbidden
 from django.template.loader import render_to_string
 
-from .models import Table, Column, Row, Cell, RowPermission
+from .models import Table, Column, Row, Cell, RowPermission, Filial, Employee
 from .forms import TableForm, ColumnForm, RowEditForm, AddRowForm
 from django.contrib import messages
 from django_tables2 import RequestConfig
@@ -331,8 +331,17 @@ def sort_func(queryset, table_obj):
             F('created_by__profile__employee__lastname'),
             output_field=TextField()
         ),
-        filial_name=F('created_by__profile__employee__id_filial__name')
     )
+
+    queryset = queryset.annotate(
+        filial_name=Subquery(
+            Filial.objects.filter(
+                id=OuterRef('created_by__profile__employee__id_filial')
+            ).values('name')[:1],
+            output_field=TextField()  # Указываем тип поля явно
+        )
+    )
+
     for column in table_obj.columns.all():
         queryset = Row.annotate_for_sorting(queryset, column.id, column.data_type)
     return queryset
