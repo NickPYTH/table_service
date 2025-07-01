@@ -5,30 +5,40 @@ from django.urls import reverse
 from django.utils.crypto import get_random_string
 from django.db.models import IntegerField, FloatField, BooleanField, DateField, F, TextField, Value
 from datetime import date
-from django.db.models.signals import post_save
-from django.dispatch import receiver
 
 
 class Filial(models.Model):
-    id = models.AutoField(primary_key=True)
-    name = models.CharField()
-    code = models.IntegerField(null=True, blank=True)
+    id = models.IntegerField(primary_key=True)
+    name = models.CharField(null=True, blank=True)
+    long_name = models.CharField(null=True, blank=True)
+    short_name = models.CharField(null=True, blank=True)
+    set_date = models.DateField(null=True, blank=True)
+    end_date = models.DateField(null=True, blank=True)
+    boss = models.CharField(null=True, blank=True)
 
 
 class Employee(models.Model):
-    id = models.AutoField(primary_key=True)
+    id = models.IntegerField(primary_key=True)
     id_filial = models.IntegerField(null=True, blank=True)
     id_department = models.IntegerField(null=True, blank=True)
-    id_post = models.IntegerField(null=True, blank=True)
-    id_poststaff = models.IntegerField(null=True, blank=True)
-    tabnum = models.IntegerField(unique=True)  # Табельный номер
+    post_name = models.CharField(null=True, blank=True)
+    tabnumber = models.IntegerField(unique=True)  # Табельный номер
     firstname = models.CharField(max_length=50)
     secondname = models.CharField(max_length=50)
     lastname = models.CharField(max_length=50)
-    setdate = models.DateField(null=True, blank=True)
-    enddate = models.DateField(null=True, blank=True)
-    gesch = models.SmallIntegerField(null=True, blank=True)
-    kostl = models.CharField(max_length=10, null=True, blank=True)
+    set_date = models.DateField(null=True, blank=True)
+    end_date = models.DateField(null=True, blank=True)
+
+
+class Department(models.Model):
+    id = models.IntegerField(primary_key=True)
+    id_parent = models.IntegerField(null=True, blank=True)
+    id_filial = models.IntegerField(null=True, blank=True)
+    name = models.CharField(null=True, blank=True)
+    long_name = models.CharField(null=True, blank=True)
+    short_name = models.CharField(null=True, blank=True)
+    set_date = models.DateField(null=True, blank=True)
+    end_date = models.DateField(null=True, blank=True)
 
 
 class Profile(models.Model):
@@ -186,7 +196,6 @@ class Row(models.Model):
             self._filial_values_cache = {
                 'id': filial.id if filial else None,
                 'name': filial.name if filial else '',
-                'code': filial.code if filial else None
             }
         return self._filial_values_cache
 
@@ -326,3 +335,12 @@ class RowPermission(models.Model):
     class Meta:
         unique_together = ('row', 'user')
 
+
+class RowFilialPermission(models.Model):
+    row = models.ForeignKey(Row, on_delete=models.CASCADE, related_name='filial_permissions')
+    filial = models.ForeignKey(Filial, on_delete=models.CASCADE)
+    can_edit = models.BooleanField(default=True)
+    can_delete = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = ('row', 'filial')

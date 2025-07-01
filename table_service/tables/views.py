@@ -6,7 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponseForbidden
 from django.template.loader import render_to_string
 
-from .models import Table, Column, Row, Cell, RowPermission, Filial, Employee
+from .models import Table, Column, Row, Cell, RowPermission, Filial, Employee, RowFilialPermission
 from .forms import TableForm, ColumnForm, RowEditForm, AddRowForm
 from django.contrib import messages
 from django_tables2 import RequestConfig
@@ -89,7 +89,7 @@ def manage_row_permissions(request, table_pk, row_pk):
     row = get_object_or_404(Row, pk=row_pk, table=table)
 
     if not row.has_manage_permission(request.user):
-        return HttpResponseForbidden("Только владелец таблицы может управлять правами")
+        return HttpResponseForbidden("Только владелец строки может управлять правами")
 
     if request.method == 'POST':
         if 'update_submit' in request.POST:
@@ -116,18 +116,86 @@ def manage_row_permissions(request, table_pk, row_pk):
                             'can_delete': can_delete,
                         }
                     )
+
+        if 'update_submit_fil' in request.POST:
+            # Обработка существующих филиалов
+            for f_perm in row.filial_permissions.all():
+                filial_id = str(f_perm.filial.id)
+                f_perm.can_edit = f'filial_can_edit_{filial_id}' in request.POST
+                f_perm.can_delete = f'filial_can_delete_{filial_id}' in request.POST
+
+                users_from_filial = User.objects.filter(
+                    profile__employee__id_filial=filial_id
+                ).exclude(
+                    # Исключаем пользователей, у которых уже есть индивидуальные права
+                    pk__in=row.permissions.exclude(
+                        can_edit=f_perm.can_edit,
+                        can_delete=f_perm.can_delete
+                    ).values_list('user__id', flat=True)
+                )
+
+                for user in users_from_filial:
+                    # Обработка добавления пользователей для филиалов
+                    RowPermission.objects.update_or_create(
+                        row=row,
+                        user=user,
+                        defaults={
+                            'can_edit': f_perm.can_edit,
+                            'can_delete': f_perm.can_delete,
+                        }
+                    )
+
+                f_perm.save()
+
+        if 'add_filials_submit' in request.POST:
+            new_filials = request.POST.getlist('new_filials')
+            if new_filials:
+                filial_can_edit = 'new_filial_can_edit' in request.POST
+                filial_can_delete = 'new_filial_can_delete' in request.POST
+                for filial_id in new_filials:
+                    filial = get_object_or_404(Filial, pk=filial_id)
+                    RowFilialPermission.objects.update_or_create(
+                        row=row,
+                        filial=filial,
+                        defaults={
+                            'can_edit': filial_can_edit,
+                            'can_delete': filial_can_delete,
+                        }
+                    )
+                    # Применяем права ко всем пользователям филиала
+                    users = User.objects.filter(
+                        profile__employee__id_filial=filial.id
+                    ).exclude(
+                        pk__in=row.permissions.values_list('user__id', flat=True)
+                    )
+
+                    for user in users:
+                        RowPermission.objects.update_or_create(
+                            row=row,
+                            user=user,
+                            defaults={
+                                'can_edit': filial_can_edit,
+                                'can_delete': filial_can_delete,
+                            }
+                        )
+
         messages.success(request, 'Обновление прав успешно!')
         return redirect('manage_row_permissions', table_pk=table.pk, row_pk=row.pk)
 
     # Получаем текущие разрешения для строки
-    permissions = row.permissions.filter()
+    permissions = row.permissions.all()
+    filial_permissions = row.filial_permissions.all()
+
     all_users = User.objects.exclude(pk=table.owner.pk)
+    all_filials = Filial.objects.exclude(id=1910)
 
     return render(request, 'tables/manage_permissions.html', {
         'table': table,
         'row': row,
         'permissions': permissions,
-        'all_users': all_users
+        'filial_permissions': filial_permissions,
+        'all_users': all_users,
+        'all_filials': all_filials
     })
 
 
@@ -215,17 +283,42 @@ def add_row(request, pk):
             user_filial = request.user.profile.employee.id_filial
 
             if user_filial:
-                colleagues = User.objects.filter(
-                    profile__employee__id_filial=user_filial
+                if user_filial != 1910:
+                    # Добавляем права для филиала создателя
+                    filial = get_object_or_404(Filial, pk=user_filial)
+                    RowFilialPermission.objects.update_or_create(
+                        row=row,
+                        filial=filial,
+                        defaults={
+                            'can_edit': True,
+                            'can_delete': True,
+                        }
+                    )
+
+                    colleagues = User.objects.filter(
+                        profile__employee__id_filial=user_filial,
+                    ).exclude(id=request.user.id)
+
+                    # Создаем права для всех коллег
+                    for colleague in colleagues:
+                        RowPermission.objects.update_or_create(
+                            row=row,
+                            user=colleague,
+                            can_edit=True,  # Могут редактировать
+                            can_delete=True  # Могут удалять
+                        )
+
+                administration = User.objects.filter(
+                    profile__employee__id_filial=1910,
                 ).exclude(id=request.user.id)
 
-                # Создаем права для всех коллег
-                for colleague in colleagues:
-                    RowPermission.objects.create(
+                # Создаем права для всей администрации
+                for admin in administration:
+                    RowPermission.objects.update_or_create(
                         row=row,
-                        user=colleague,
-                        can_edit=True,  # Могут редактировать
-                        can_delete=False  # Но не могут удалять
+                        user=admin,
+                        can_edit=True,
+                        can_delete=True
                     )
 
             # Заполняем ячейки данными из формы
