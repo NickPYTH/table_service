@@ -8,6 +8,7 @@ from django.template.loader import render_to_string
 
 from .models import Table, Column, Row, Cell, RowPermission, Filial, Employee, RowFilialPermission
 from .forms import TableForm, ColumnForm, RowEditForm, AddRowForm
+from .service import unlock_row, lock_row
 from django.contrib import messages
 from django_tables2 import RequestConfig
 from .tables import DynamicTable
@@ -126,12 +127,6 @@ def manage_row_permissions(request, table_pk, row_pk):
 
                 users_from_filial = User.objects.filter(
                     profile__employee__id_filial=filial_id
-                ).exclude(
-                    # Исключаем пользователей, у которых уже есть индивидуальные права
-                    pk__in=row.permissions.exclude(
-                        can_edit=f_perm.can_edit,
-                        can_delete=f_perm.can_delete
-                    ).values_list('user__id', flat=True)
                 )
 
                 for user in users_from_filial:
@@ -233,6 +228,15 @@ def delete_row(request, table_pk, row_pk):
         return redirect('shared_table_view', share_token=table.share_token)
 
 
+@require_POST
+@login_required
+def unlock_row_api(request, row_pk):
+    row = get_object_or_404(Row, pk=row_pk)
+    if unlock_row(row, request.user):
+        return JsonResponse({'status': 'success'})
+    return JsonResponse({'status': 'error'}, status=400)
+
+
 @login_required
 def edit_row(request, table_pk, row_pk):
     table = get_object_or_404(Table, pk=table_pk)
@@ -243,10 +247,19 @@ def edit_row(request, table_pk, row_pk):
     if request.method == 'POST':
         form = RowEditForm(request.POST, row=row)
         if form.is_valid():
+            # Снимаем блокировку после успешного редактирования
+            unlock_row(row, request.user)
+
             save_row_data(table, row, form)
             messages.success(request, 'Строка успешно отредактирована!')
             return JsonResponse({'status': 'success'})
         return JsonResponse({'status': 'error', 'errors': form.errors}, status=400)
+
+    if not lock_row(row, request.user):
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Строка сейчас редактируется другим пользователем'
+        }, status=423)  # 423 - Locked
 
     # GET запрос - возвращаем форму
     form = RowEditForm(row=row)

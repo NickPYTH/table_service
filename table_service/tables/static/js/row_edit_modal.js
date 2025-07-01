@@ -1,3 +1,18 @@
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     document.addEventListener('click', function(e) {
         if (e.target.closest('.add-row-btn')) {
@@ -27,25 +42,64 @@ document.addEventListener('DOMContentLoaded', function() {
             const rowId = btn.dataset.rowId;
             const tableId = btn.dataset.tableId;
 
-            // Показываем модальное окно сразу
             const modal = new bootstrap.Modal(document.getElementById('rowEditModal'));
-            modal.show();
+            let isModalInitialized = false;
 
-            // Загрузка формы
-            fetch(`/${tableId}/edit_row/${rowId}/`)
-                .then(response => response.json())
-                .then(data => {
-                    if(data.status === 'success') {
-                        document.getElementById('modalContent').innerHTML = data.html;
-                    } else {
-                        alert('Ошибка загрузки формы');
-                        modal.hide();
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    modal.hide();
-                });
+            // Обработчик закрытия модалки
+            const handleModalClose = () => {
+                if (!document.getElementById('rowEditForm')?.dataset.submitted) {
+                    fetch(`/api/unlock_row/${rowId}/`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': getCookie('csrftoken'),
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({})
+                    });
+                }
+                modal._element.removeEventListener('hidden.bs.modal', handleModalClose);
+            };
+
+            // Ждем полной инициализации модалки
+            modal._element.addEventListener('shown.bs.modal', function onShown() {
+                if (isModalInitialized) return;
+                isModalInitialized = true;
+
+                // Удаляем обработчик shown после первого срабатывания
+                modal._element.removeEventListener('shown.bs.modal', onShown);
+
+                // Добавляем обработчик закрытия
+                modal._element.addEventListener('hidden.bs.modal', handleModalClose);
+
+                // Загрузка формы только после инициализации модалки
+                fetch(`/${tableId}/edit_row/${rowId}/`)
+                    .then(response => {
+                        if (response.status === 423) {
+                            return response.json().then(data => {
+                                alert(data.message);
+                                modal.hide();
+                                return Promise.reject('Row locked');
+                            });
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.status === 'success') {
+                            document.getElementById('modalContent').innerHTML = data.html;
+                        } else {
+                            alert('Ошибка загрузки формы');
+                            modal.hide();
+                        }
+                    })
+                    .catch(error => {
+                        if (error !== 'Row locked') {
+                            console.error('Error:', error);
+                            modal.hide();
+                        }
+                    });
+            });
+
+            modal.show();
         }
     });
 

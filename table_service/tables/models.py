@@ -344,3 +344,17 @@ class RowFilialPermission(models.Model):
 
     class Meta:
         unique_together = ('row', 'filial')
+
+
+class RowLock(models.Model):
+    row = models.OneToOneField(
+        Row,
+        on_delete=models.CASCADE,
+        related_name='lock'
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='row_locks'
+    )
+    locked_at = models.DateTimeField(auto_now_add=True)

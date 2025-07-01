@@ -18,4 +18,5 @@ urlpatterns = [
     path('shared/', views.shared_tables_list, name='shared_tables_list'),
     path('shared/<str:share_token>/', views.shared_table_view, name='shared_table_view'),
     path('<int:table_pk>/<int:row_pk>/permissions/', views.manage_row_permissions, name='manage_row_permissions'),
+    path('api/unlock_row/<int:row_pk>/', views.unlock_row_api, name='unlock_row_api'),
 ]
