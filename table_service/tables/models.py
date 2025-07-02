@@ -357,4 +357,4 @@ class RowLock(models.Model):
         on_delete=models.CASCADE,
         related_name='row_locks'
     )
-    locked_at = models.DateTimeField(auto_now_add=True)
+    locked_at = models.DateTimeField()

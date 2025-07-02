@@ -1,3 +1,5 @@
+import datetime
+
 from django.db import transaction
 from .models import RowLock
 
@@ -8,7 +10,8 @@ def lock_row(row, user):
         # Создаем новую блокировку
         lock, created = RowLock.objects.get_or_create(
             row=row,
-            defaults={'user': user}
+            defaults={'user': user,
+                      'locked_at': datetime.datetime.now()}
         )
 
         if not created and lock.user != user:
