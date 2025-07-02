@@ -13,10 +13,9 @@ def lock_row(row, user):
             defaults={'user': user,
                       'locked_at': datetime.datetime.now()}
         )
-
         if not created and lock.user != user:
-            return False  # Уже заблокировано другим пользователем
-        return True
+            return False, lock.user  # Уже заблокировано другим пользователем
+        return True, None
 
 
 def unlock_row(row, user):

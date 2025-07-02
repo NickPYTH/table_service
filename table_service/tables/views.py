@@ -1,3 +1,6 @@
+import datetime
+
+from django.db import transaction
 from django.db.models import F, Value, TextField, Subquery, OuterRef
 from django.db.models.functions import Concat
 from django.contrib.auth.models import User
@@ -6,7 +9,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponseForbidden
 from django.template.loader import render_to_string
 
-from .models import Table, Column, Row, Cell, RowPermission, Filial, Employee, RowFilialPermission
+from .models import Table, Column, Row, Cell, RowPermission, Filial, Employee, RowFilialPermission, TablePermission, TableFilialPermission
 from .forms import TableForm, ColumnForm, RowEditForm, AddRowForm
 from .service import unlock_row, lock_row
 from django.contrib import messages
@@ -41,7 +44,27 @@ def create_table(request):
         if form.is_valid():
             table = form.save(commit=False)
             table.owner = request.user
+            table.created_at = datetime.datetime.now()
             table.save()
+
+            TablePermission.objects.update_or_create(
+                table=table,
+                user=request.user,
+                can_view=True
+            )
+
+            administration = User.objects.filter(
+                profile__employee__id_filial=1910,
+            ).exclude(id=request.user.id)
+
+            # Создаем права для всей администрации
+            for admin in administration:
+                TablePermission.objects.update_or_create(
+                    table=table,
+                    user=admin,
+                    can_view=True
+                )
+
             return redirect('table_detail', pk=table.pk)
     else:
         form = TableForm()
@@ -195,6 +218,149 @@ def manage_row_permissions(request, table_pk, row_pk):
 
 
 @login_required
+def manage_table_permissions(request, table_pk):
+    table = get_object_or_404(Table, pk=table_pk)
+
+    if table.owner != request.user:
+        return HttpResponseForbidden("Только владелец таблицы может редактировать права на таблицу")
+
+    if request.method == 'POST':
+        if 'update_submit' in request.POST:
+            # Обработка существующих пользователей
+            for perm in table.permissions.all():
+                user_id = str(perm.user.id)
+                perm.can_view = f'can_view_{user_id}' in request.POST
+                perm.save()
+
+        # Обработка новых пользователей
+        if 'add_users_submit' in request.POST:
+            new_users = request.POST.getlist('new_users')
+            if new_users:
+                can_view = 'new_can_view' in request.POST
+                for user_id in new_users:
+                    user = get_object_or_404(User, pk=user_id)
+                    TablePermission.objects.update_or_create(
+                        table=table,
+                        user=user,
+                        defaults={
+                            'can_view': can_view,
+                        }
+                    )
+
+        if 'update_submit_fil' in request.POST:
+            # Обработка существующих филиалов
+            for f_perm in table.filial_permissions.all():
+                filial_id = str(f_perm.filial.id)
+                f_perm.can_view = f'filial_can_view_{filial_id}' in request.POST
+
+                users_from_filial = User.objects.filter(
+                    profile__employee__id_filial=filial_id
+                )
+
+                for user in users_from_filial:
+                    # Обработка добавления пользователей для филиалов
+                    TablePermission.objects.update_or_create(
+                        table=table,
+                        user=user,
+                        defaults={
+                            'can_view': f_perm.can_view,
+                        }
+                    )
+
+                f_perm.save()
+
+        if 'add_filials_submit' in request.POST:
+            new_filials = request.POST.getlist('new_filials')
+            if new_filials:
+                filial_can_view = 'new_filial_can_view' in request.POST
+                for filial_id in new_filials:
+                    filial = get_object_or_404(Filial, pk=filial_id)
+                    TableFilialPermission.objects.update_or_create(
+                        table=table,
+                        filial=filial,
+                        defaults={
+                            'can_view': filial_can_view,
+                        }
+                    )
+                    # Применяем права ко всем пользователям филиала
+                    users = User.objects.filter(
+                        profile__employee__id_filial=filial.id
+                    ).exclude(
+                        pk__in=table.permissions.values_list('user__id', flat=True)
+                    )
+
+                    for user in users:
+                        TablePermission.objects.update_or_create(
+                            table=table,
+                            user=user,
+                            defaults={
+                                'can_view': filial_can_view,
+                            }
+                        )
+
+        messages.success(request, 'Обновление прав успешно!')
+        return redirect('manage_table_permissions', table_pk=table.pk)
+
+    # Получаем текущие разрешения для таблицы
+    permissions = table.permissions.all()
+    filial_permissions = table.filial_permissions.all()
+
+    all_users = User.objects.exclude(pk=table.owner.pk)
+    all_filials = Filial.objects.exclude(id=1910)
+
+    return render(request, 'tables/manage_table_permissions.html', {
+        'table': table,
+        'permissions': permissions,
+        'filial_permissions': filial_permissions,
+        'all_users': all_users,
+        'all_filials': all_filials
+    })
+
+
+@login_required
+def revoke_redact_rows(request, share_token):
+    table = get_object_or_404(Table, share_token=share_token)
+
+    if not table.has_view_permission(request.user):
+        return HttpResponseForbidden("У вас нет прав на завершение редактирования этой таблицы")
+
+    try:
+        # Применяем права ко всем пользователям филиала
+        filial_id = request.user.profile.employee.id_filial
+        filial = Filial.objects.get(id=filial_id)
+        users = User.objects.filter(
+            profile__employee__id_filial=filial_id
+        )
+
+        rows = table.rows.all()
+
+        with transaction.atomic():
+            RowFilialPermission.objects.filter(
+                row__table=table,
+                filial=filial
+            ).update(
+                can_edit=False,
+                can_delete=False
+            )
+
+            for row in rows:
+                for user in users:
+                    RowPermission.objects.filter(
+                        row=row,
+                        user=user
+                    ).update(
+                        can_edit=False,
+                        can_delete=False
+                    )
+        messages.success(request, f'Права редактирования для филиала {filial.name} сняты со всех строк')
+        return redirect('shared_table_view', share_token=table.share_token)
+
+    except Exception as e:
+        messages.error(request, f'Ошибка при снятии прав: {str(e)}')
+        return redirect('shared_table_view', share_token=table.share_token)
+
+
+@login_required
 def delete_column(request, table_pk, column_pk):
     table = get_object_or_404(Table, pk=table_pk)
     column = get_object_or_404(Column, pk=column_pk, table=table)
@@ -255,10 +421,11 @@ def edit_row(request, table_pk, row_pk):
             return JsonResponse({'status': 'success'})
         return JsonResponse({'status': 'error', 'errors': form.errors}, status=400)
 
-    if not lock_row(row, request.user):
+    lock, lock_user = lock_row(row, request.user)
+    if not lock:
         return JsonResponse({
             'status': 'error',
-            'message': 'Строка сейчас редактируется другим пользователем'
+            'message': f'Строка сейчас редактируется другим пользователем: {lock_user}'
         }, status=423)  # 423 - Locked
 
     # GET запрос - возвращаем форму
@@ -430,6 +597,9 @@ def table_detail(request, pk):
 @login_required()
 def shared_table_view(request, share_token):
     table = get_object_or_404(Table, share_token=share_token)
+
+    if not table.has_view_permission(request.user):
+        return HttpResponseForbidden("У вас нет прав на просмотр этой таблицы")
 
     # Получаем строки, которые пользователь может видеть
     rows = Row.get_visible_rows(request.user, table)

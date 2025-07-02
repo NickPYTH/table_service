@@ -57,8 +57,7 @@ class Profile(models.Model):
 class Table(models.Model):
     title = models.CharField(max_length=200)
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField()
     share_token = models.CharField(max_length=32, unique=True, blank=True)
 
     def save(self, *args, **kwargs):
@@ -75,12 +74,18 @@ class Table(models.Model):
     def get_url_for_users(self):
         return f'/shared/{self.share_token}'
 
+    def has_view_permission(self, user):
+        """Проверяет, может ли пользователь видеть таблицу"""
+        if self.owner == user:
+            return True
+        return self.permissions.filter(user=user, can_view=True).exists()
+
     @classmethod
     def get_shared_tables(cls, user):
         """Возвращает все таблицы, к которым у пользователя есть доступ"""
-        # Таблицы, где пользователь явно указан в RowPermission
+        # Таблицы, где пользователь явно указан в TablePermission
         shared_via_permissions = cls.objects.filter(
-            rows__permissions__user=user,
+            permissions__user=user,
         ).distinct()
         return shared_via_permissions
 
@@ -324,6 +329,24 @@ class Cell(models.Model):
 
     def __str__(self):
         return f"{self.row} - {self.column}: {self.value}"
+
+
+class TablePermission(models.Model):
+    table = models.ForeignKey(Table, on_delete=models.CASCADE, related_name='permissions')
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    can_view = models.BooleanField(default=True)
+
+    class Meta:
+        unique_together = ('table', 'user')
+
+
+class TableFilialPermission(models.Model):
+    table = models.ForeignKey(Table, on_delete=models.CASCADE, related_name='filial_permissions')
+    filial = models.ForeignKey(Filial, on_delete=models.CASCADE)
+    can_view = models.BooleanField(default=True)
+
+    class Meta:
+        unique_together = ('table', 'filial')
 
 
 class RowPermission(models.Model):

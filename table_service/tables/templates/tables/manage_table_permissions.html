@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Редактировать разрешения для таблицы {{ table.title }}</h2>
+    <p>Таблица: {{ table.title }}</p>
+
+    <div class="card mt-3">
+        <div class="card-header">
+            <h5>Текущие разрешения для пользователей</h5>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Пользователь</th>
+                            <th>ID Филиала</th>
+                            <th>Разрешить просматривать</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for perm in permissions %}
+                        <tr>
+                            <td>{{ perm.user.username }}</td>
+                            <td>{{ perm.user.profile.employee.id_filial }}</td>
+                            <td>
+                                <input type="checkbox" name="can_view_{{ perm.user.id }}"
+                                       {% if perm.can_view %}checked{% endif %}>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <button type="submit" name="update_submit" class="btn btn-primary">Сохранить все изменения</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="card mt-3">
+        <div class="card-header">
+            <h5>Добавить новое разрешение для пользователя</h5>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-md-3">
+                        <select name="new_users" multiple class="form-select">
+                            {% for user in all_users %}
+                                <option value="{{ user.id }}">{{ user.username }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-check">
+                            <input type="checkbox" name="new_can_view" id="new_can_view" checked>
+                            <label for="new_can_view">Разрешить просматривать</label>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <button type="submit" name="add_users_submit" class="btn btn-primary">Добавить</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card mt-3">
+    <div class="card-header">
+        <h5>Текущие разрешения для филиалов</h5>
+    </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Филиал</th>
+                            <th>ID Филиала</th>
+                            <th>Разрешить просматривать</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for fil_perm in filial_permissions %}
+                        <tr>
+                            <td>{{ fil_perm.filial.name }}</td>
+                            <td>{{ fil_perm.filial.id }}</td>
+                            <td>
+                                <input type="checkbox" name="filial_can_view_{{ fil_perm.filial.id }}"
+                                       {% if fil_perm.can_view %}checked{% endif %}>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <button type="submit" name="update_submit_fil" class="btn btn-primary">Сохранить все изменения</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="card mt-3">
+        <div class="card-header">
+            <h5>Добавить новое разрешение для филиала</h5>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-md-3">
+                        <select name="new_filials" multiple class="form-select">
+                            {% for filial in all_filials %}
+                                <option value="{{ filial.id }}">{{ filial.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-check">
+                            <input type="checkbox" name="new_filial_can_view" id="new_filial_can_view" checked>
+                            <label for="new_filial_can_view">Разрешить просматривать</label>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <button type="submit" name="add_filials_submit" class="btn btn-primary">Добавить</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

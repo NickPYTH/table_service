@@ -40,12 +40,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'tables.apps.TablesConfig',
     'django_tables2',
-    'crispy_forms',
 ]
 
 CORS_ORIGIN_ALLOW_ALL = True
-
-CRISPY_TEMPLATE_PACK = 'uni_form'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -119,12 +116,11 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'ru-RU'
 
-TIME_ZONE = 'Europe/Moscow'
+TIME_ZONE = 'Asia/Yekaterinburg'
 
 USE_I18N = True
 
-USE_TZ = True
-
+USE_TZ = False
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/

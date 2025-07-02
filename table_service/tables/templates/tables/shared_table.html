@@ -19,6 +19,9 @@
         <a class="btn btn-success add-row-btn" data-table-id="{{ table_obj.pk }}">
             Добавить строку
         </a>
+        <a href="{% url 'revoke_redact_rows' share_token=table_obj.share_token %}" class="btn btn-danger">
+            Завершение редактирования всех строк
+        </a>
     </div>
 
     {% render_table table %}
