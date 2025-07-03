@@ -20,5 +20,6 @@ urlpatterns = [
     path('shared/<str:share_token>/revoke_redact/', views.revoke_redact_rows, name='revoke_redact_rows'),
     path('<int:table_pk>/<int:row_pk>/row_permissions/', views.manage_row_permissions, name='manage_row_permissions'),
     path('<int:table_pk>/table_permissions/', views.manage_table_permissions, name='manage_table_permissions'),
+    path('<int:table_pk>/unlock_filial/', views.unlock_filial_table, name='unlock_filial_table'),
     path('api/unlock_row/<int:row_pk>/', views.unlock_row_api, name='unlock_row_api'),
 ]

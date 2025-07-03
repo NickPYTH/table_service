@@ -9,7 +9,8 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponseForbidden
 from django.template.loader import render_to_string
 
-from .models import Table, Column, Row, Cell, RowPermission, Filial, Employee, RowFilialPermission, TablePermission, TableFilialPermission
+from .models import Table, Column, Row, Cell, RowPermission, Filial, Employee, RowFilialPermission, TablePermission, \
+    TableFilialPermission, TableFilialLock
 from .forms import TableForm, ColumnForm, RowEditForm, AddRowForm
 from .service import unlock_row, lock_row
 from django.contrib import messages
@@ -343,6 +344,16 @@ def revoke_redact_rows(request, share_token):
                 can_delete=False
             )
 
+            # Блокируем кнопку добавление строки для филиала
+            TableFilialLock.objects.update_or_create(
+                table=table,
+                filial=filial,
+                defaults={
+                    'locked_by': request.user,
+                    'locked_at': datetime.datetime.now()
+                }
+            )
+
             for row in rows:
                 for user in users:
                     RowPermission.objects.filter(
@@ -441,6 +452,9 @@ def edit_row(request, table_pk, row_pk):
 @login_required
 def add_row(request, pk):
     table = get_object_or_404(Table, pk=pk)
+
+    if not table.has_view_permission(request.user) or not table.has_add_permission:
+        return HttpResponseForbidden("Вы не можете добавлять строки в эту таблицу")
 
     if request.method == 'POST':
         form = AddRowForm(request.POST, table=table)
@@ -611,6 +625,34 @@ def shared_table_view(request, share_token):
         'table_obj': table,
         'table': table_view,
         'is_owner': table.owner == request.user,
+        'is_add_permission': table.has_add_permission(request.user),
+    })
+
+
+@login_required
+def unlock_filial_table(request, table_pk):
+    table = get_object_or_404(Table, pk=table_pk)
+
+    if table.owner != request.user:
+        return HttpResponseForbidden("Только администратор может разблокировать таблицу")
+    if request.method == 'POST':
+        if 'lock_filial' in request.POST:
+            filial_id = request.POST.get('lock_filial')
+            try:
+                filial = Filial.objects.get(id=filial_id)
+                TableFilialLock.objects.filter(
+                    table=table,
+                    filial=filial,
+                ).delete()
+                messages.success(request, f'Таблица разблокирована для филиала {filial.name}')
+            except Filial.DoesNotExist:
+                messages.error(request, 'Филиал не найден')
+
+    filial_permissions = table.filial_add_permissions.all()
+
+    return render(request, 'tables/add_row/unlock_row.html', {
+        'table_obj': table,
+        'filial_permissions': filial_permissions,
     })
 
 

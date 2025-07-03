@@ -13,20 +13,23 @@
 
 {% if table_obj.owner == request.user %}
     <div id="clickable-btns">
-        <a href="{% url 'add_column' table_obj.pk %}" class="btn btn-primary ms-2">
+        <a href="{% url 'add_column' table_obj.pk %}" class="btn btn-primary">
             <i class="fas fa-columns me-1"></i> Добавить столбец
         </a>
         <a class="btn btn-success add-row-btn" data-table-id="{{ table_obj.pk }}">
-            Добавить строку
+            <i class="fa-solid fa-plus"></i> Добавить строку
         </a>
         <a href="{% url 'delete_table' table_obj.pk %}" class="btn btn-danger">
-            Удалить таблицу
+            <i class="fas fa-ban"></i> Удалить таблицу
         </a>
         <a href="{{ table_obj.get_shared_url }}" class="btn btn-primary">
            <i class="fa-solid fa-share-nodes me-1"></i> Поделиться таблицей
         </a>
         <a href="{% url 'manage_table_permissions' table_obj.pk %}" class="btn btn-success">
-            Редактировать права на таблицу
+            <i class="fa-solid fa-pen-to-square"></i> Редактировать права на таблицу
+        </a>
+        <a href="{% url 'unlock_filial_table' table_obj.pk %}" class="btn btn-primary">
+            Редактировать блокировку филиалов на добавление строк
         </a>
     </div>
 {% endif %}

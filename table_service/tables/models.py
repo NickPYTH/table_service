@@ -74,6 +74,19 @@ class Table(models.Model):
     def get_url_for_users(self):
         return f'/shared/{self.share_token}'
 
+    def has_add_permission(self, user):
+        """Проверяет, может ли пользователь добавлять строки в таблицу"""
+        # Проверяем глобальную блокировку для филиала
+        filial = Filial.objects.get(id=user.profile.employee.id_filial)
+        if TableFilialLock.objects.filter(
+                table=self,
+                filial=filial,
+                locked_by=user
+        ).exists():
+            return False
+
+        return True
+
     def has_view_permission(self, user):
         """Проверяет, может ли пользователь видеть таблицу"""
         if self.owner == user:
@@ -381,3 +394,13 @@ class RowLock(models.Model):
         related_name='row_locks'
     )
     locked_at = models.DateTimeField()
+
+
+class TableFilialLock(models.Model):
+    table = models.ForeignKey(Table, on_delete=models.CASCADE, related_name='filial_add_permissions')
+    filial = models.ForeignKey(Filial, on_delete=models.CASCADE)
+    locked_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    locked_at = models.DateTimeField()
+
+    class Meta:
+        unique_together = ('table', 'filial')

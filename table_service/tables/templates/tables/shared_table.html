@@ -16,11 +16,14 @@
             Редактировать таблицу
         </a>
         {% endif %}
-        <a class="btn btn-success add-row-btn" data-table-id="{{ table_obj.pk }}">
-            Добавить строку
-        </a>
-        <a href="{% url 'revoke_redact_rows' share_token=table_obj.share_token %}" class="btn btn-danger">
-            Завершение редактирования всех строк
+        {% if is_add_permission %}
+            <a class="btn btn-success add-row-btn" data-table-id="{{ table_obj.pk }}">
+                Добавить строку
+            </a>
+        {% endif %}
+        <a href="{% url 'revoke_redact_rows' share_token=table_obj.share_token %}" class="btn btn-danger"
+           onclick="return confirm('Вы уверены, что хотите снять права редактирования у всех пользователей вашего филиала?')">
+            <i class="fas fa-ban"></i> Завершение редактирования всех строк для филиала
         </a>
     </div>
 
