@@ -4,12 +4,12 @@
 <div class="container mt-4">
     <h2 class="d-flex justify-content-between">Редактировать разрешения для таблицы {{ table.title }}
         {% if table.owner == request.user %}
-            <a href="{% url 'table_detail' pk=table.pk %}" class="btn btn-primary">
-                <i class="fa-solid fa-rotate-left"></i> Назад
+            <a href="{% url 'table_detail' pk=table.pk %}" class="btn btn-secondary">
+                <i class="fa-solid fa-rotate-left"></i> Вернуться к таблице
             </a>
         {% else %}
-            <a href="{% url 'shared_table_view' share_token=table.share_token %}" class="btn btn-primary">
-                <i class="fa-solid fa-rotate-left"></i> Назад
+            <a href="{% url 'shared_table_view' share_token=table.share_token %}" class="btn btn-secondary">
+                <i class="fa-solid fa-rotate-left"></i> Вернуться к таблице
             </a>
         {% endif %}
     </h2>

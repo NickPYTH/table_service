@@ -1,3 +1,5 @@
+import datetime
+
 from django.db import models
 from django.contrib.auth.models import User
 from django.db.models.functions import Concat
@@ -74,6 +76,10 @@ class Table(models.Model):
     def get_url_for_users(self):
         return f'/shared/{self.share_token}'
 
+    def is_admin(self, user):
+        """Проверяет, является ли пользователь админом таблицы"""
+        return self.admins.filter(user=user).exists()
+
     def has_add_permission(self, user):
         """Проверяет, может ли пользователь добавлять строки в таблицу"""
         # Проверяем глобальную блокировку для филиала
@@ -91,6 +97,8 @@ class Table(models.Model):
         """Проверяет, может ли пользователь видеть таблицу"""
         if self.owner == user:
             return True
+        if self.is_admin(user):
+            return True
         return self.permissions.filter(user=user, can_view=True).exists()
 
     @classmethod
@@ -104,6 +112,17 @@ class Table(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class TableAdmin(models.Model):
+    table = models.ForeignKey(Table, on_delete=models.CASCADE, related_name='admins')
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(default=datetime.datetime.now())
+
+    class Meta:
+        unique_together = ('table', 'user')
+        verbose_name = 'Администратор таблицы'
+        verbose_name_plural = 'Администраторы таблиц'
 
 
 class Column(models.Model):
@@ -148,17 +167,23 @@ class Row(models.Model):
         """Проверяет, может ли пользователь редактировать строку"""
         if self.table.owner == user:
             return True
+        if self.table.is_admin(user):
+            return True
         return self.permissions.filter(user=user, can_edit=True).exists()
 
     def has_delete_permission(self, user):
         """Проверяет, может ли пользователь удалять строку"""
         if self.table.owner == user:
             return True
+        if self.table.is_admin(user):
+            return True
         return self.permissions.filter(user=user, can_delete=True).exists()
 
     def has_manage_permission(self, user):
         """Проверяет, может ли пользователь управлять правами на строку"""
         if self.table.owner == user:
+            return True
+        if self.table.is_admin(user):
             return True
         if self.created_by and self.created_by == user:
             return True
@@ -169,7 +194,8 @@ class Row(models.Model):
         """Возвращает строки, которые пользователь может видеть"""
         if table.owner == user:
             return table.rows.all()
-
+        if table.is_admin(user):
+            return table.rows.all()
         result = models.Q(permissions__user=user) | models.Q(created_by=user)
 
         user_filial = None

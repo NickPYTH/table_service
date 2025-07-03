@@ -10,7 +10,7 @@ from django.http import JsonResponse, HttpResponseForbidden
 from django.template.loader import render_to_string
 
 from .models import Table, Column, Row, Cell, RowPermission, Filial, Employee, RowFilialPermission, TablePermission, \
-    TableFilialPermission, TableFilialLock
+    TableFilialPermission, TableFilialLock, TableAdmin
 from .forms import TableForm, ColumnForm, RowEditForm, AddRowForm
 from .service import unlock_row, lock_row
 from django.contrib import messages
@@ -77,7 +77,7 @@ def delete_table(request, pk):
     table = get_object_or_404(Table, pk=pk)
 
     # Проверка прав
-    if table.owner != request.user:
+    if not (table.owner == request.user or table.is_admin(request.user)):
         return HttpResponseForbidden("Вы не можете удалять таблицы")
 
     table.delete()
@@ -91,7 +91,7 @@ def add_column(request, pk):
     table = get_object_or_404(Table, pk=pk)
 
     # Проверка прав (только владелец может добавлять колонки)
-    if table.owner != request.user:
+    if not (table.owner == request.user or table.is_admin(request.user)):
         return HttpResponseForbidden("Вы не можете добавлять колонки в эту таблицу")
 
     if request.method == 'POST':
@@ -106,6 +106,39 @@ def add_column(request, pk):
     else:
         form = ColumnForm()
     return render(request, 'tables/add_column/add_column.html', {'form': form, 'table': table})
+
+
+@login_required
+def manage_table_admins(request, pk):
+    table = get_object_or_404(Table, pk=pk)
+
+    if table.owner != request.user:
+        return HttpResponseForbidden("Только владелец может управлять администраторами")
+
+    if request.method == 'POST':
+        if 'add_admin' in request.POST:
+            user_id = request.POST.get('new_admin')
+            if user_id:
+                user = get_object_or_404(User, pk=user_id)
+                TableAdmin.objects.get_or_create(table=table, user=user)
+                messages.success(request, f'{user.username} добавлен как администратор')
+
+        if 'remove_admin' in request.POST:
+            admin_id = request.POST.get('admin_id')
+            if admin_id:
+                TableAdmin.objects.filter(table=table, pk=admin_id).delete()
+                messages.success(request, 'Администратор удален')
+
+        return redirect('manage_table_admins', pk=table.pk)
+
+    current_admins = TableAdmin.objects.filter(table=table)
+    available_users = User.objects.exclude(pk=table.owner.pk)
+
+    return render(request, 'tables/manage_admins.html', {
+        'table': table,
+        'current_admins': current_admins,
+        'available_users': available_users
+    })
 
 
 @login_required
@@ -222,7 +255,7 @@ def manage_row_permissions(request, table_pk, row_pk):
 def manage_table_permissions(request, table_pk):
     table = get_object_or_404(Table, pk=table_pk)
 
-    if table.owner != request.user:
+    if not (table.owner == request.user or table.is_admin(request.user)):
         return HttpResponseForbidden("Только владелец таблицы может редактировать права на таблицу")
 
     if request.method == 'POST':
@@ -377,7 +410,7 @@ def delete_column(request, table_pk, column_pk):
     column = get_object_or_404(Column, pk=column_pk, table=table)
 
     # Проверка прав
-    if table.owner != request.user:
+    if not (table.owner == request.user or table.is_admin(request.user)):
         return HttpResponseForbidden("Вы не можете удалять колонки из этой таблицы")
 
     Cell.objects.filter(column=column).delete()
@@ -580,7 +613,7 @@ def shared_tables_list(request):
 @require_POST
 def revoke_access(request, pk):
     table = get_object_or_404(Table, pk=pk)
-    if table.owner != request.user:
+    if not (table.owner == request.user or table.is_admin(request.user)):
         return HttpResponseForbidden("Только владелец таблицы может отозвать доступ")
 
     user = get_object_or_404(User, pk=request.POST.get('user_id'))
@@ -593,7 +626,7 @@ def revoke_access(request, pk):
 def table_detail(request, pk):
     table_obj = get_object_or_404(Table, pk=pk)
     # Проверка прав доступа
-    if table_obj.owner != request.user:
+    if not (table_obj.owner == request.user or table_obj.is_admin(request.user)):
         return HttpResponseForbidden("You don't have permission to access this table.")
 
     queryset = table_obj.rows.all().prefetch_related('cells', 'cells__column')
@@ -605,6 +638,7 @@ def table_detail(request, pk):
     return render(request, 'tables/table_detail.html', {
         'table_obj': table_obj,
         'table': table,
+        'is_admin': table_obj.is_admin(request.user)
     })
 
 
@@ -625,6 +659,7 @@ def shared_table_view(request, share_token):
         'table_obj': table,
         'table': table_view,
         'is_owner': table.owner == request.user,
+        'is_admin': table.is_admin(request.user),
         'is_add_permission': table.has_add_permission(request.user),
     })
 
@@ -633,7 +668,7 @@ def shared_table_view(request, share_token):
 def unlock_filial_table(request, table_pk):
     table = get_object_or_404(Table, pk=table_pk)
 
-    if table.owner != request.user:
+    if not (table.owner == request.user or table.is_admin(request.user)):
         return HttpResponseForbidden("Только администратор может разблокировать таблицу")
     if request.method == 'POST':
         if 'lock_filial' in request.POST:

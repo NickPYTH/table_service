@@ -12,7 +12,7 @@
 
     <div class="mb-3 d-flex justify-content-between">
         <div>
-            {% if is_owner %}
+            {% if is_owner or is_admin %}
             <a href="{% url 'table_detail' pk=table_obj.pk %}" class="btn btn-primary">
                 Редактировать таблицу
             </a>
