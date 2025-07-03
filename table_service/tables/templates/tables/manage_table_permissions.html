@@ -2,8 +2,25 @@
 
 {% block content %}
 <div class="container mt-4">
-    <h2>Редактировать разрешения для таблицы {{ table.title }}</h2>
+    <h2 class="d-flex justify-content-between">Редактировать разрешения для таблицы {{ table.title }}
+        {% if table.owner == request.user %}
+            <a href="{% url 'table_detail' pk=table.pk %}" class="btn btn-primary">
+                <i class="fa-solid fa-rotate-left"></i> Назад
+            </a>
+        {% else %}
+            <a href="{% url 'shared_table_view' share_token=table.share_token %}" class="btn btn-primary">
+                <i class="fa-solid fa-rotate-left"></i> Назад
+            </a>
+        {% endif %}
+    </h2>
     <p>Таблица: {{ table.title }}</p>
+
+    <!-- Поисковые поля -->
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <input type="text" id="userSearch" class="form-control" placeholder="Поиск пользователей...">
+        </div>
+    </div>
 
     <div class="card mt-3">
         <div class="card-header">
@@ -12,7 +29,7 @@
         <div class="card-body">
             <form method="post">
                 {% csrf_token %}
-                <table class="table">
+                <table class="table" id="userPermissionsTable">
                     <thead>
                         <tr>
                             <th>Пользователь</th>
@@ -22,9 +39,9 @@
                     </thead>
                     <tbody>
                         {% for perm in permissions %}
-                        <tr>
-                            <td>{{ perm.user.username }}</td>
-                            <td>{{ perm.user.profile.employee.id_filial }}</td>
+                        <tr class="user-row">
+                            <td class="user-name">{{ perm.user.username }}</td>
+                            <td class="user-filial">{{ perm.user.profile.employee.id_filial }}</td>
                             <td>
                                 <input type="checkbox" name="can_view_{{ perm.user.id }}"
                                        {% if perm.can_view %}checked{% endif %}>
@@ -46,35 +63,44 @@
             <form method="post">
                 {% csrf_token %}
                 <div class="row">
-                    <div class="col-md-3">
-                        <select name="new_users" multiple class="form-select">
+                    <div class="col-md-4">
+                        <input type="text" id="userFilter" class="form-control mb-2" placeholder="Фильтр пользователей...">
+                        <select name="new_users" multiple class="form-select" id="userSelect" size="5">
                             {% for user in all_users %}
-                                <option value="{{ user.id }}">{{ user.username }}</option>
+                                <option value="{{ user.id }}" data-filial="{{ user.profile.employee.id_filial }}">
+                                    {{ user.username }} (Филиал: {{ user.profile.employee.id_filial }})
+                                </option>
                             {% endfor %}
                         </select>
                     </div>
-                    <div class="col-md-3">
-                        <div class="form-check">
+                    <div class="col-md-4">
+                        <div class="form-check mt-4">
                             <input type="checkbox" name="new_can_view" id="new_can_view" checked>
                             <label for="new_can_view">Разрешить просматривать</label>
                         </div>
                     </div>
-                    <div class="col-md-3">
-                        <button type="submit" name="add_users_submit" class="btn btn-primary">Добавить</button>
+                    <div class="col-md-4">
+                        <button type="submit" name="add_users_submit" class="btn btn-primary mt-4">Добавить</button>
                     </div>
                 </div>
             </form>
         </div>
     </div>
 
-    <div class="card mt-3">
-    <div class="card-header">
-        <h5>Текущие разрешения для филиалов</h5>
+    <div class="row mb-3 mt-3">
+        <div class="col-md-6">
+            <input type="text" id="filialSearch" class="form-control" placeholder="Поиск филиалов...">
+        </div>
     </div>
+
+    <div class="card mt-3">
+        <div class="card-header">
+            <h5>Текущие разрешения для филиалов</h5>
+        </div>
         <div class="card-body">
             <form method="post">
                 {% csrf_token %}
-                <table class="table">
+                <table class="table" id="filialPermissionsTable">
                     <thead>
                         <tr>
                             <th>Филиал</th>
@@ -84,9 +110,9 @@
                     </thead>
                     <tbody>
                         {% for fil_perm in filial_permissions %}
-                        <tr>
-                            <td>{{ fil_perm.filial.name }}</td>
-                            <td>{{ fil_perm.filial.id }}</td>
+                        <tr class="filial-row">
+                            <td class="filial-name">{{ fil_perm.filial.name }}</td>
+                            <td class="filial-id">{{ fil_perm.filial.id }}</td>
                             <td>
                                 <input type="checkbox" name="filial_can_view_{{ fil_perm.filial.id }}"
                                        {% if fil_perm.can_view %}checked{% endif %}>
@@ -108,26 +134,77 @@
             <form method="post">
                 {% csrf_token %}
                 <div class="row">
-                    <div class="col-md-3">
-                        <select name="new_filials" multiple class="form-select">
+                    <div class="col-md-4">
+                        <input type="text" id="filialFilter" class="form-control mb-2" placeholder="Фильтр филиалов...">
+                        <select name="new_filials" multiple class="form-select" id="filialSelect" size="5">
                             {% for filial in all_filials %}
-                                <option value="{{ filial.id }}">{{ filial.name }}</option>
+                                <option value="{{ filial.id }}">
+                                    {{ filial.name }} (ID: {{ filial.id }})
+                                </option>
                             {% endfor %}
                         </select>
                     </div>
-                    <div class="col-md-3">
-                        <div class="form-check">
+                    <div class="col-md-4">
+                        <div class="form-check mt-4">
                             <input type="checkbox" name="new_filial_can_view" id="new_filial_can_view" checked>
                             <label for="new_filial_can_view">Разрешить просматривать</label>
                         </div>
                     </div>
-                    <div class="col-md-3">
-                        <button type="submit" name="add_filials_submit" class="btn btn-primary">Добавить</button>
+                    <div class="col-md-4">
+                        <button type="submit" name="add_filials_submit" class="btn btn-primary mt-4">Добавить</button>
                     </div>
                 </div>
             </form>
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Поиск по пользователям в таблице
+    document.getElementById('userSearch').addEventListener('input', function(e) {
+        const searchTerm = e.target.value.toLowerCase();
+        document.querySelectorAll('#userPermissionsTable .user-row').forEach(row => {
+            const userName = row.querySelector('.user-name').textContent.toLowerCase();
+            const userFilial = row.querySelector('.user-filial').textContent.toLowerCase();
+            const match = userName.includes(searchTerm) || userFilial.includes(searchTerm);
+            row.style.display = match ? '' : 'none';
+        });
+    });
+
+    // Поиск по филиалам в таблице
+    document.getElementById('filialSearch').addEventListener('input', function(e) {
+        const searchTerm = e.target.value.toLowerCase();
+        document.querySelectorAll('#filialPermissionsTable .filial-row').forEach(row => {
+            const filialName = row.querySelector('.filial-name').textContent.toLowerCase();
+            const filialId = row.querySelector('.filial-id').textContent.toLowerCase();
+            const match = filialName.includes(searchTerm) || filialId.includes(searchTerm);
+            row.style.display = match ? '' : 'none';
+        });
+    });
+
+    // Фильтр пользователей в select
+    document.getElementById('userFilter').addEventListener('input', function(e) {
+        const searchTerm = e.target.value.toLowerCase();
+        const options = document.querySelectorAll('#userSelect option');
+
+        options.forEach(option => {
+            const text = option.textContent.toLowerCase();
+            option.style.display = text.includes(searchTerm) ? '' : 'none';
+        });
+    });
+
+    // Фильтр филиалов в select
+    document.getElementById('filialFilter').addEventListener('input', function(e) {
+        const searchTerm = e.target.value.toLowerCase();
+        const options = document.querySelectorAll('#filialSelect option');
+
+        options.forEach(option => {
+            const text = option.textContent.toLowerCase();
+            option.style.display = text.includes(searchTerm) ? '' : 'none';
+        });
+    });
+});
+</script>
 
 {% endblock %}
