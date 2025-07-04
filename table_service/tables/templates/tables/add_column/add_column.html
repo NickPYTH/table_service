@@ -22,19 +22,19 @@
                         </label>
                         {{ form.name }}
                         {% if form.name.errors %}
-                        <div class="invalid-feedback d-block">
-                            {{ form.name.errors|join:", " }}
-                        </div>
+                            <div class="invalid-feedback d-block">
+                                {{ form.name.errors|join:", " }}
+                            </div>
                         {% endif %}
 
-                        <label class="form-label">
-                            Тип данных
+                        <label class="form-label mt-3">
+                            Тип данных:
                         </label>
                         {{ form.data_type }}
                         {% if form.data_type.errors %}
-                        <div class="invalid-feedback d-block">
-                            {{ form.data_type.errors|join:", " }}
-                        </div>
+                            <div class="invalid-feedback d-block">
+                                {{ form.data_type.errors|join:", " }}
+                            </div>
                         {% endif %}
                     </div>
 

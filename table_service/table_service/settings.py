@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'tables.apps.TablesConfig',
     'django_tables2',
+    'django_bootstrap5',
 ]
 
 CORS_ORIGIN_ALLOW_ALL = True
