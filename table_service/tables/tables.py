@@ -5,6 +5,89 @@ from django.utils.html import format_html
 from .models import Row, Column
 
 
+class ExportTable(tables.Table):
+    export_formats = ['xls', 'xlsx', 'csv']
+
+    class Meta:
+        model = Row
+        attrs = {
+            'class': 'table table-bordered table-hover',
+            'thead': {
+                'class': 'table-light'
+            }
+        }
+        fields = ()  # Будем заполнять динамически
+
+    def __init__(self, *args, table_obj=None, request=None, **kwargs):
+        self.base_columns.clear()
+        self.table_obj = table_obj
+        self.request = request
+        if table_obj:
+            self.base_columns['filial'] = tables.Column(
+                verbose_name='Филиал',
+                accessor=f'filial_values.name',
+                attrs={
+                    'td': {'class': 'text-center'}
+                },
+                orderable=False,
+            )
+
+            self.base_columns['user'] = tables.Column(
+                verbose_name='Пользователь',
+                accessor=f'user_values.full_name',
+                attrs={
+                    'td': {'class': 'text-center'}
+                },
+                orderable=False,
+            )
+
+            for column in table_obj.columns.all():
+                self._add_column(column)
+
+        super().__init__(*args, **kwargs)
+
+    def _add_column(self, column):
+        col_name = f'col_{column.id}'
+        accessor = f'cell_values.{column.id}'
+
+        # Выбираем соответствующий тип столбца
+        if column.data_type == Column.ColumnType.INTEGER:
+            self.base_columns[col_name] = tables.Column(
+                verbose_name=column.name,
+                accessor=accessor,
+                attrs={'td': {'class': 'text-center'}},
+                orderable=False,
+            )
+        if column.data_type == Column.ColumnType.FLOAT:
+            self.base_columns[col_name] = tables.Column(
+                verbose_name=column.name,
+                accessor=accessor,
+                attrs={'td': {'class': 'text-center'}},
+                orderable=False,
+            )
+        elif column.data_type == Column.ColumnType.BOOLEAN:
+            self.base_columns[col_name] = tables.BooleanColumn(
+                verbose_name=column.name,
+                accessor=accessor,
+                attrs={'td': {'class': 'text-center'}},
+                orderable=False,
+            )
+        elif column.data_type == Column.ColumnType.DATE:
+            self.base_columns[col_name] = tables.DateColumn(
+                verbose_name=column.name,
+                accessor=accessor,
+                attrs={'td': {'class': 'text-center'}},
+                orderable=False,
+            )
+        else:  # TEXT по умолчанию
+            self.base_columns[col_name] = tables.Column(
+                verbose_name=column.name,
+                accessor=accessor,
+                attrs={'td': {'class': 'text-center'}},
+                orderable=False,
+            )
+
+
 class DynamicTable(tables.Table):
     SORT_ICON = 'fa-solid fa-sort'
     SORT_UP_ICON = 'fa-solid fa-sort-up'

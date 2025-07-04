@@ -29,11 +29,12 @@
         <a href="{% url 'unlock_filial_table' table_obj.pk %}" class="btn btn-outline-primary">
             Редактировать блокировку филиалов на добавление строк
         </a>
-        {% if table_obj.owner == request.user %}
-            <a href="{% url 'manage_table_admins' pk=table_obj.pk %}" class="btn btn-outline-info">
-                <i class="fas fa-user-shield"></i> Управление администраторами
-            </a>
-        {% endif %}
+        <a href="{% url 'manage_table_admins' pk=table_obj.pk %}" class="btn btn-outline-info">
+            <i class="fas fa-user-shield"></i> Управление администраторами
+        </a>
+        <a href="{% url 'export_table' table_obj.pk %}" class="btn btn-outline-primary">
+            Экспорт таблицы
+        </a>
     </div>
     <div>
         <a href="{% url 'delete_table' table_obj.pk %}" class="btn btn-danger"

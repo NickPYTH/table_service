@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% load django_tables2 %}
+
+{% block content %}
+<div>
+  {% for format in table.export_formats %}
+    <a href="{% export_url format %}" class="btn btn-primary">.{{ format }}</a>
+  {% endfor %}
+</div>
+<div class="table-responsive">
+    {% render_table table %}
+</div>
+{% endblock %}

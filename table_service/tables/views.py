@@ -8,14 +8,15 @@ from django.shortcuts import render, redirect, get_object_or_404, reverse
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponseForbidden
 from django.template.loader import render_to_string
+from django_tables2.export import ExportMixin, TableExport
 
 from .models import Table, Column, Row, Cell, RowPermission, Filial, Employee, RowFilialPermission, TablePermission, \
     TableFilialPermission, TableFilialLock, TableAdmin
 from .forms import TableForm, ColumnForm, RowEditForm, AddRowForm
 from .service import unlock_row, lock_row
 from django.contrib import messages
-from django_tables2 import RequestConfig
-from .tables import DynamicTable
+from django_tables2 import RequestConfig, SingleTableView
+from .tables import DynamicTable, ExportTable
 from django.views.decorators.http import require_POST, require_http_methods
 
 
@@ -688,6 +689,29 @@ def unlock_filial_table(request, table_pk):
     return render(request, 'tables/add_row/unlock_row.html', {
         'table_obj': table,
         'filial_permissions': filial_permissions,
+    })
+
+
+@login_required
+def export_table(request, table_pk):
+    table_obj = get_object_or_404(Table, pk=table_pk)
+    # Проверка прав доступа
+    if not (table_obj.owner == request.user or table_obj.is_admin(request.user)):
+        return HttpResponseForbidden("Вы не можете скачать таблицу")
+
+    queryset = table_obj.rows.all().prefetch_related('cells', 'cells__column')
+
+    table = ExportTable(data=queryset, table_obj=table_obj, request=request)
+
+    RequestConfig(request).configure(table)
+
+    export_format = request.GET.get("_export", None)
+    if TableExport.is_valid_format(export_format):
+        exporter = TableExport(export_format, table)
+        return exporter.response(f"table.{export_format}")
+
+    return render(request, "tables/export/export_table.html", {
+        "table": table
     })
 
 

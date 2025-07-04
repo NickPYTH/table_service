@@ -23,4 +23,5 @@ urlpatterns = [
     path('<int:table_pk>/unlock_filial/', views.unlock_filial_table, name='unlock_filial_table'),
     path('api/unlock_row/<int:row_pk>/', views.unlock_row_api, name='unlock_row_api'),
     path('<int:pk>/admins/', views.manage_table_admins, name='manage_table_admins'),
+    path('<int:table_pk>/export/', views.export_table, name='export_table'),
 ]
