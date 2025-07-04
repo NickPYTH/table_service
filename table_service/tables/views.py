@@ -10,7 +10,7 @@ from django.template.loader import render_to_string
 from django_tables2.export import ExportMixin, TableExport
 
 from .models import Table, Column, Row, Cell, RowPermission, Filial, Employee, RowFilialPermission, TablePermission, \
-    TableFilialPermission, TableFilialLock, TableAdmin
+    TableFilialPermission, TableFilialLock, Admin
 from .forms import TableForm, ColumnForm, RowEditForm, AddRowForm
 from .service import unlock_row, lock_row
 from django.contrib import messages
@@ -34,7 +34,10 @@ def save_row_data(table, row, form):
 
 @login_required
 def table_list(request):
-    tables = Table.objects.filter(owner=request.user)
+    if Admin.objects.filter(user=request.user).exists():
+        tables = Table.objects.all()
+    else:
+        tables = Table.objects.filter(owner=request.user)
     return render(request, 'tables/table_list.html', {'tables': tables})
 
 
@@ -109,35 +112,30 @@ def add_column(request, pk):
 
 
 @login_required
-def manage_table_admins(request, pk):
-    table = get_object_or_404(Table, pk=pk)
-
-    if table.owner != request.user:
-        return HttpResponseForbidden("Только владелец может управлять администраторами")
-
+def manage_admins(request):
     if request.method == 'POST':
         if 'add_admin' in request.POST:
             user_id = request.POST.get('new_admin')
             if user_id:
                 user = get_object_or_404(User, pk=user_id)
-                TableAdmin.objects.get_or_create(table=table, user=user)
+                Admin.objects.get_or_create(user=user)
                 messages.success(request, f'{user.username} добавлен как администратор')
 
         if 'remove_admin' in request.POST:
             admin_id = request.POST.get('admin_id')
             if admin_id:
-                TableAdmin.objects.filter(table=table, pk=admin_id).delete()
+                Admin.objects.filter(pk=admin_id).delete()
                 messages.success(request, 'Администратор удален')
 
-        return redirect('manage_table_admins', pk=table.pk)
+        return redirect('manage_admins')
 
-    current_admins = TableAdmin.objects.filter(table=table)
-    available_users = User.objects.exclude(pk=table.owner.pk)
+    current_admins = Admin.objects.all()
+    available_users = User.objects.all()
 
     return render(request, 'tables/manage_admins.html', {
-        'table': table,
         'current_admins': current_admins,
-        'available_users': available_users
+        'available_users': available_users,
+        'is_admin': Admin.objects.filter(user=request.user)
     })
 
 

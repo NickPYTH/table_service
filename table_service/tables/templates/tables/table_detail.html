@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="{% static 'css/table_form.css' %}">
 </head>
 <h1>{{ table_obj.title }}</h1>
-<p>Owner: {{ table_obj.owner }}</p>
+<p>Владелец таблицы: {{ table_obj.owner }}</p>
 
 <div class="d-flex justify-content-between">
 {% if table_obj.owner == request.user or is_admin %}
@@ -28,9 +28,6 @@
         </a>
         <a href="{% url 'unlock_filial_table' table_obj.pk %}" class="btn btn-outline-primary">
             Редактировать блокировку филиалов на добавление строк
-        </a>
-        <a href="{% url 'manage_table_admins' pk=table_obj.pk %}" class="btn btn-outline-info">
-            <i class="fas fa-user-shield"></i> Управление администраторами
         </a>
         <a href="{% url 'export_table' table_obj.pk %}" class="btn btn-outline-primary">
             Экспорт таблицы

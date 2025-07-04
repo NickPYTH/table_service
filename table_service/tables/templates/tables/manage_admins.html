@@ -14,7 +14,9 @@
                     <tr>
                         <th>Пользователь</th>
                         <th>Дата назначения</th>
+                        {% if is_admin %}
                         <th>Действия</th>
+                        {% endif %}
                     </tr>
                 </thead>
                 <tbody>
@@ -22,6 +24,7 @@
                     <tr>
                         <td>{{ admin.user.username }}</td>
                         <td>{{ admin.created_at|date:"d.m.Y H:i" }}</td>
+                        {% if is_admin %}
                         <td>
                             <form method="post" style="display:inline;">
                                 {% csrf_token %}
@@ -32,13 +35,14 @@
                                 </button>
                             </form>
                         </td>
+                        {% endif %}
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
     </div>
-
+    {% if is_admin %}
     <div class="card mt-3">
         <div class="card-header">
             <h5>Добавить администратора</h5>
@@ -64,10 +68,11 @@
             </form>
         </div>
     </div>
+    {% endif %}
 
     <div class="mt-3">
-        <a href="{% url 'table_detail' pk=table.pk %}" class="btn btn-secondary">
-            <i class="fa-solid fa-rotate-left"></i> Вернуться к таблице
+        <a href="{% url 'table_list' %}" class="btn btn-secondary">
+            <i class="fa-solid fa-rotate-left"></i> Вернуться к начальной странице
         </a>
     </div>
 </div>

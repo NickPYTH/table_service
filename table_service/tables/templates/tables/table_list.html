@@ -4,10 +4,17 @@
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1><i class="fas fa-table me-2"></i>Мои таблицы</h1>
-    <a href="{% url 'create_table' %}" class="btn btn-success">
-        <i class="fas fa-plus me-1"></i> Новая таблица
-    </a>
+    <div>
+        <h1><i class="fas fa-table me-2"></i>Мои таблицы</h1>
+    </div>
+    <div>
+        <a href="{% url 'create_table' %}" class="btn btn-success">
+            <i class="fas fa-plus me-1"></i> Новая таблица
+        </a>
+        <a href="{% url 'manage_admins' %}" class="btn btn-outline-info">
+            <i class="fas fa-user-shield"></i> Администраторы сервиса
+        </a>
+    </div>
 </div>
 
 {% if tables %}
@@ -16,7 +23,10 @@
     <a href="{% url 'table_detail' table.pk %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
         <div>
             <h5 class="mb-1">{{ table.title }}</h5>
-            <small class="text-muted">Создано: {{ table.created_at|date:"d.m.Y H:i" }}</small>
+            <div class="d-flex flex-column">
+                <small class="text-muted">Владелец: {{ table.owner }}</small>
+                <small class="text-muted">Создано: {{ table.created_at|date:"d.m.Y H:i" }}</small>
+            </div>
         </div>
         <div>
             <span class="badge bg-primary rounded-pill me-2">

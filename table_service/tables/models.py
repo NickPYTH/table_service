@@ -78,7 +78,7 @@ class Table(models.Model):
 
     def is_admin(self, user):
         """Проверяет, является ли пользователь админом таблицы"""
-        return self.admins.filter(user=user).exists()
+        return Admin.objects.filter(user=user).exists()
 
     def has_add_permission(self, user):
         """Проверяет, может ли пользователь добавлять строки в таблицу"""
@@ -114,15 +114,13 @@ class Table(models.Model):
         return self.title
 
 
-class TableAdmin(models.Model):
-    table = models.ForeignKey(Table, on_delete=models.CASCADE, related_name='admins')
+class Admin(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     created_at = models.DateTimeField(default=datetime.datetime.now())
 
     class Meta:
-        unique_together = ('table', 'user')
-        verbose_name = 'Администратор таблицы'
-        verbose_name_plural = 'Администраторы таблиц'
+        verbose_name = 'Администратор сервиса'
+        verbose_name_plural = 'Администраторы сервиса'
 
 
 class Column(models.Model):
@@ -184,8 +182,6 @@ class Row(models.Model):
         if self.table.owner == user:
             return True
         if self.table.is_admin(user):
-            return True
-        if self.created_by and self.created_by == user:
             return True
         return False
 
