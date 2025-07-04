@@ -30,7 +30,18 @@
             </a>
         </div>
     </div>
-
+        <form method="get" class="mb-3">
+        <div class="input-group">
+            <input type="text" name="q" class="form-control" placeholder="Поиск..."
+                   value="{{ request.GET.q }}">
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-search"></i> Поиск
+            </button>
+            {% if request.GET.q %}
+            <a href="?" class="btn btn-outline-secondary">Сбросить</a>
+            {% endif %}
+        </div>
+    </form>
     {% render_table table %}
     <div class="modal fade" id="addRowModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg">

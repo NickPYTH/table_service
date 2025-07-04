@@ -1,6 +1,6 @@
 import datetime
 from django.db import transaction
-from django.db.models import F, Value, TextField, Subquery, OuterRef
+from django.db.models import F, Value, TextField, Subquery, OuterRef, Q
 from django.db.models.functions import Concat
 from django.contrib.auth.models import User
 from django.shortcuts import render, redirect, get_object_or_404, reverse
@@ -634,6 +634,9 @@ def table_detail(request, pk):
         return HttpResponseForbidden("You don't have permission to access this table.")
 
     queryset = table_obj.rows.all().prefetch_related('cells', 'cells__column')
+
+    queryset, search_query = filter_func(queryset, request, table_obj)
+
     # Добавляем аннотации для каждого столбца
     queryset = sort_func(queryset, table_obj)
 
@@ -642,7 +645,8 @@ def table_detail(request, pk):
     return render(request, 'tables/table_detail.html', {
         'table_obj': table_obj,
         'table': table,
-        'is_admin': table_obj.is_admin(request.user)
+        'is_admin': table_obj.is_admin(request.user),
+        'search_query': search_query
     })
 
 
@@ -655,6 +659,9 @@ def shared_table_view(request, share_token):
 
     # Получаем строки, которые пользователь может видеть
     rows = Row.get_visible_rows(request.user, table)
+
+    rows, search_query = filter_func(rows, request, table)
+
     queryset = sort_func(rows, table)
     table_view = DynamicTable(data=queryset, table_obj=table, request=request)
     RequestConfig(request).configure(table_view)
@@ -665,6 +672,7 @@ def shared_table_view(request, share_token):
         'is_owner': table.owner == request.user,
         'is_admin': table.is_admin(request.user),
         'is_add_permission': table.has_add_permission(request.user),
+        'search_query': search_query
     })
 
 
@@ -735,6 +743,73 @@ def export_table(request, table_pk):
     return render(request, "tables/export/export_table.html", {
         "table": table
     })
+
+
+def filter_func(queryset, request, table_obj):
+    search_query = request.GET.get('q', '')
+    if search_query:
+        # Создаем условие для поиска по всем колонкам
+        column_conditions = Q()
+        for column in table_obj.columns.all():
+            column_conditions |= Q(cells__column=column, cells__text_value__icontains=search_query)
+            if column.data_type == Column.ColumnType.INTEGER:
+                try:
+                    int_value = int(search_query)
+                    column_conditions |= Q(cells__column=column, cells__integer_value=int_value)
+                except ValueError:
+                    pass
+            elif column.data_type == Column.ColumnType.FLOAT:
+                try:
+                    float_value = float(search_query)
+                    column_conditions |= Q(cells__column=column,
+                                           cells__float_value__gte=float_value - 0.1,
+                                           cells__float_value__lte=float_value + 0.1)
+                except ValueError:
+                    pass
+            elif column.data_type == Column.ColumnType.BOOLEAN:
+                # Поиск по булевым значениям (true/false, да/нет и т.д.)
+                bool_value = None
+                if search_query.lower() in ['true', 'да', 'yes', '1', 'истина']:
+                    bool_value = True
+                elif search_query.lower() in ['false', 'нет', 'no', '0', 'ложь']:
+                    bool_value = False
+
+                if bool_value is not None:
+                    column_conditions |= Q(cells__column=column, cells__boolean_value=bool_value)
+            elif column.data_type == Column.ColumnType.DATE:
+                try:
+                    # Пробуем разные форматы дат
+                    date_formats = ['%Y-%m-%d', '%d.%m.%Y', '%d/%m/%Y', '%m/%d/%Y']
+                    parsed_date = None
+                    for fmt in date_formats:
+                        try:
+                            parsed_date = datetime.datetime.strptime(search_query, fmt).date()
+                            break
+                        except ValueError:
+                            continue
+
+                    if parsed_date:
+                        column_conditions |= Q(cells__column=column, cells__date_value=parsed_date)
+                except ValueError:
+                    pass
+
+        filter_filial_ids = Filial.objects.filter(
+            Q(name__icontains=search_query) |
+            Q(long_name__icontains=search_query) |
+            Q(short_name__icontains=search_query)
+        ).values_list('id', flat=True)
+
+        queryset = queryset.filter(
+            column_conditions |
+            Q(created_by__profile__employee__firstname__icontains=search_query) |
+            Q(created_by__profile__employee__secondname__icontains=search_query) |
+            Q(created_by__profile__employee__lastname__icontains=search_query) |
+            Q(created_by__profile__employee__id_filial__in=filter_filial_ids)
+        ).distinct()
+
+        return queryset, search_query
+    else:
+        return queryset, search_query
 
 
 def sort_func(queryset, table_obj):
