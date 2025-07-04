@@ -1,5 +1,4 @@
 import datetime
-
 from django.db import transaction
 from django.db.models import F, Value, TextField, Subquery, OuterRef
 from django.db.models.functions import Concat
@@ -388,15 +387,21 @@ def revoke_redact_rows(request, share_token):
                 }
             )
 
-            for row in rows:
-                for user in users:
-                    RowPermission.objects.filter(
-                        row=row,
-                        user=user
-                    ).update(
-                        can_edit=False,
-                        can_delete=False
-                    )
+            users_from_filial = User.objects.filter(profile__employee__id_filial=filial_id)
+
+            # Получаем все существующие разрешения
+            existing_permissions = RowPermission.objects.filter(
+                user__in=users_from_filial,
+                row__in=rows
+            ).select_related('user', 'row')
+
+            # Обновляем существующие
+            for perm in existing_permissions:
+                perm.can_edit = False
+                perm.can_delete = False
+
+            RowPermission.objects.bulk_update(existing_permissions, ['can_edit', 'can_delete'])
+
         messages.success(request, f'Права редактирования для филиала {filial.name} сняты со всех строк')
         return redirect('shared_table_view', share_token=table.share_token)
 
@@ -674,15 +679,34 @@ def unlock_filial_table(request, table_pk):
     if request.method == 'POST':
         if 'lock_filial' in request.POST:
             filial_id = request.POST.get('lock_filial')
-            try:
-                filial = Filial.objects.get(id=filial_id)
-                TableFilialLock.objects.filter(
-                    table=table,
-                    filial=filial,
-                ).delete()
-                messages.success(request, f'Таблица разблокирована для филиала {filial.name}')
-            except Filial.DoesNotExist:
-                messages.error(request, 'Филиал не найден')
+            can_edit = request.POST.get(f"filial_can_edit_{filial_id}") == "on"
+            can_delete = request.POST.get(f"filial_can_delete_{filial_id}") == "on"
+            with transaction.atomic():
+                try:
+                    filial = Filial.objects.get(id=filial_id)
+                    users_from_filial = User.objects.filter(profile__employee__id_filial=filial_id)
+                    rows = Row.objects.filter(table=table)
+
+                    # Получаем все существующие разрешения
+                    existing_permissions = RowPermission.objects.filter(
+                        user__in=users_from_filial,
+                        row__in=rows
+                    ).select_related('user', 'row')
+
+                    # Обновляем существующие
+                    for perm in existing_permissions:
+                        perm.can_edit = can_edit
+                        perm.can_delete = can_delete
+
+                    RowPermission.objects.bulk_update(existing_permissions, ['can_edit', 'can_delete'])
+
+                    TableFilialLock.objects.filter(
+                        table=table,
+                        filial=filial,
+                    ).delete()
+                    messages.success(request, f'Таблица разблокирована для филиала {filial.name}')
+                except Filial.DoesNotExist:
+                    messages.error(request, 'Филиал не найден')
 
     filial_permissions = table.filial_add_permissions.all()
 

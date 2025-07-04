@@ -17,6 +17,8 @@
                         <tr>
                             <th>Филиал</th>
                             <th>ID Филиала</th>
+                            <th>Разрешить редактировать</th>
+                            <th>Разрешить удалять</th>
                             <th>Действия</th>
                         </tr>
                     </thead>
@@ -25,6 +27,14 @@
                         <tr>
                             <td>{{ fil_perm.filial.name }}</td>
                             <td>{{ fil_perm.filial.id }}</td>
+                            <td>
+                                <input type="checkbox" name="filial_can_edit_{{ fil_perm.filial.id }}"
+                                       {% if fil_perm.can_edit %}checked{% endif %}>
+                            </td>
+                            <td>
+                                <input type="checkbox" name="filial_can_delete_{{ fil_perm.filial.id }}"
+                                       {% if fil_perm.can_delete %}checked{% endif %}>
+                            </td>
                             <td>
                                 <button type="submit" name="lock_filial"
                                         class="btn btn-success"
