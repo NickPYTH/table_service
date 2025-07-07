@@ -136,6 +136,11 @@ class Column(models.Model):
     table = models.ForeignKey(Table, on_delete=models.CASCADE, related_name='columns')
     name = models.CharField(max_length=100)
     order = models.PositiveIntegerField(default=0)
+    is_required = models.BooleanField(
+        default=False,
+        verbose_name="Обязательное поле",
+        help_text="Если отмечено, поле должно быть заполнено при создании/редактировании строки"
+    )
     data_type = models.CharField(
         max_length=10,
         choices=ColumnType.choices,

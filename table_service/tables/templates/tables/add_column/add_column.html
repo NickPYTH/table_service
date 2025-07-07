@@ -36,6 +36,24 @@
                                 {{ form.data_type.errors|join:", " }}
                             </div>
                         {% endif %}
+
+                        <div class="form-check mt-3">
+                            {{ form.is_required }}
+                            <div class="d-flex flex-column">
+                                <label class="form-check-label" for="{{ form.is_required.id_for_label }}">
+                                    Обязательное поле
+                                </label>
+                                <small class="form-text text-muted">
+                                    Если отмечено, поле должно быть заполнено при создании/редактировании строки
+                                </small>
+                            </div>
+                            {% if form.is_required.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.is_required.errors|join:", " }}
+                                </div>
+                            {% endif %}
+                        </div>
+
                     </div>
 
                     <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
