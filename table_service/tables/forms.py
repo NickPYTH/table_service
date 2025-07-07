@@ -13,17 +13,10 @@ class TableForm(forms.ModelForm):
 class ColumnForm(forms.ModelForm):
     class Meta:
         model = Column
-        fields = ['name', 'data_type', 'is_required']
+        fields = ['name', 'data_type']
         widgets = {
-            'data_type': forms.Select(choices=Column.ColumnType.choices),
-            'is_required': forms.CheckboxInput(attrs={
-                'class': 'form-check-input'
-            })
+            'data_type': forms.Select(choices=Column.ColumnType.choices)
         }
-
-    labels = {
-        'is_required': 'Обязательное поле'
-    }
 
 
 class ShareTableForm(forms.Form):
@@ -51,13 +44,10 @@ class AddRowForm(forms.Form):
             for column in self.table.columns.all():
                 field_name = f'col_{column.id}'
                 initial_value = Cell.get_default_value(column.data_type)
-
-                required = column.is_required
-
                 if column.data_type == Column.ColumnType.INTEGER:
                     self.fields[field_name] = forms.IntegerField(
                         label=column.name,
-                        required=required,
+                        required=False,
                         initial=initial_value,
                         widget=forms.NumberInput(attrs={
                             'class': 'form-control',
@@ -70,7 +60,7 @@ class AddRowForm(forms.Form):
                 elif column.data_type == Column.ColumnType.FLOAT:
                     self.fields[field_name] = forms.FloatField(
                         label=column.name,
-                        required=required,
+                        required=False,
                         initial=initial_value,
                         widget=forms.NumberInput(attrs={
                             'class': 'form-control',
@@ -82,7 +72,7 @@ class AddRowForm(forms.Form):
                     self.fields[field_name] = forms.BooleanField(
                         label=column.name,
                         initial=initial_value,
-                        required=required,
+                        required=False,
                         widget=forms.CheckboxInput(attrs={
                             'class': 'form-check-input'
                         })
@@ -90,7 +80,7 @@ class AddRowForm(forms.Form):
                 elif column.data_type == Column.ColumnType.DATE:
                     self.fields[field_name] = forms.DateField(
                         label=column.name,
-                        required=required,
+                        required=False,
                         initial=str(initial_value),
                         widget=forms.DateInput(attrs={
                             'type': 'date',
@@ -101,7 +91,7 @@ class AddRowForm(forms.Form):
                 else:  # TEXT
                     self.fields[field_name] = forms.CharField(
                         label=column.name,
-                        required=required,
+                        required=False,
                         initial=initial_value,
                         widget=forms.TextInput(attrs={
                             'class': 'form-control',
@@ -122,14 +112,11 @@ class RowEditForm(forms.Form):
                     initial_value = cell.value
                 else:
                     initial_value = ''
-
                 field_name = f'col_{column.id}'
-                required = column.is_required
-
                 if column.data_type == Column.ColumnType.INTEGER:
                     self.fields[field_name] = forms.IntegerField(
                         label=column.name,
-                        required=required,
+                        required=False,
                         initial=initial_value,
                         widget=forms.NumberInput(attrs={
                             'class': 'form-control',
@@ -142,7 +129,7 @@ class RowEditForm(forms.Form):
                 elif column.data_type == Column.ColumnType.FLOAT:
                     self.fields[field_name] = forms.FloatField(
                         label=column.name,
-                        required=required,
+                        required=False,
                         initial=initial_value,
                         widget=forms.NumberInput(attrs={
                             'class': 'form-control',
@@ -153,7 +140,7 @@ class RowEditForm(forms.Form):
                 elif column.data_type == Column.ColumnType.BOOLEAN:
                     self.fields[field_name] = forms.BooleanField(
                         label=column.name,
-                        required=required,
+                        required=False,
                         initial=initial_value,
                         widget=forms.CheckboxInput(attrs={
                             'class': 'form-check-input'
@@ -162,7 +149,7 @@ class RowEditForm(forms.Form):
                 elif column.data_type == Column.ColumnType.DATE:
                     self.fields[field_name] = forms.DateField(
                         label=column.name,
-                        required=required,
+                        required=False,
                         initial=str(initial_value),
                         widget=forms.DateInput(attrs={
                             'type': 'date',
@@ -173,7 +160,7 @@ class RowEditForm(forms.Form):
                 else:  # TEXT по умолчанию
                     self.fields[field_name] = forms.CharField(
                         label=column.name,
-                        required=required,
+                        required=False,
                         initial=initial_value,
                         widget=forms.TextInput(attrs={
                             'class': 'form-control',
@@ -188,13 +175,6 @@ class RowEditForm(forms.Form):
             column_id = int(field_name.split('_')[1])
             column = Column.objects.get(id=column_id)
             value_type = type(value)
-
-            if column.is_required and value in [None, '']:
-                self.add_error(field_name, ValidationError(
-                    'Это поле обязательно для заполнения',
-                    code='required'
-                ))
-
             if column.data_type == Column.ColumnType.FLOAT:
                 if value_type is not float:
                     self.add_error(column, ValidationError('Invalid value', code='Должно быть float числом'))

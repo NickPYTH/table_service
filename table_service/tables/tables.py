@@ -23,8 +23,6 @@ class ExportTable(tables.Table):
         self.table_obj = table_obj
         self.request = request
         if table_obj:
-            for column in table_obj.columns.all():
-                self._add_column(column)
             self.base_columns['filial'] = tables.Column(
                 verbose_name='Филиал',
                 accessor=f'filial_values.name',
@@ -42,6 +40,9 @@ class ExportTable(tables.Table):
                 },
                 orderable=False,
             )
+
+            for column in table_obj.columns.all():
+                self._add_column(column)
 
         super().__init__(*args, **kwargs)
 
@@ -107,9 +108,6 @@ class DynamicTable(tables.Table):
         self.table_obj = table_obj
         self.request = request
         if table_obj:
-            for column in table_obj.columns.all():
-                self._add_column(column)
-
             self.base_columns['filial'] = tables.Column(
                 verbose_name=self.get_column_header(None, is_filial=True),
                 accessor=f'filial_values.name',
@@ -127,6 +125,10 @@ class DynamicTable(tables.Table):
                 },
                 order_by='user_full_name'
             )
+
+            for column in table_obj.columns.all():
+                self._add_column(column)
+
             self.base_columns['actions'] = tables.Column(
                 empty_values=(),
                 orderable=False,

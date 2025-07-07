@@ -229,40 +229,6 @@ def manage_row_permissions(request, table_pk, row_pk):
                             }
                         )
 
-        if 'remove_user' in request.POST:
-            user_id = request.POST.get('user_id')
-            if user_id:
-                user = get_object_or_404(User, pk=user_id)
-                RowPermission.objects.filter(
-                    row=row,
-                    user=user,
-                ).delete()
-
-                messages.success(request, 'Пользователь удален')
-
-        if 'remove_filial' in request.POST:
-            filial_id = request.POST.get('filial_id')
-            if filial_id:
-                filial = get_object_or_404(Filial, pk=filial_id)
-
-                RowFilialPermission.objects.filter(
-                    row=row,
-                    filial=filial,
-                ).delete()
-
-                # Применяем права ко всем пользователям филиала
-                users = User.objects.filter(
-                    profile__employee__id_filial=filial_id
-                )
-
-                for user in users:
-                    RowPermission.objects.filter(
-                        row=row,
-                        user=user,
-                    ).delete()
-
-                messages.success(request, 'Пользователь удален')
-
         messages.success(request, 'Обновление прав успешно!')
         return redirect('manage_row_permissions', table_pk=table.pk, row_pk=row.pk)
 
@@ -364,40 +330,6 @@ def manage_table_permissions(request, table_pk):
                             }
                         )
 
-        if 'remove_user' in request.POST:
-            user_id = request.POST.get('user_id')
-            if user_id:
-                user = get_object_or_404(User, pk=user_id)
-                TablePermission.objects.filter(
-                    table=table,
-                    user=user,
-                ).delete()
-
-                messages.success(request, 'Пользователь удален')
-
-        if 'remove_filial' in request.POST:
-            filial_id = request.POST.get('filial_id')
-            if filial_id:
-                filial = get_object_or_404(Filial, pk=filial_id)
-
-                TableFilialPermission.objects.filter(
-                    table=table,
-                    filial=filial,
-                ).delete()
-
-                # Применяем права ко всем пользователям филиала
-                users = User.objects.filter(
-                    profile__employee__id_filial=filial_id
-                )
-
-                for user in users:
-                    TablePermission.objects.filter(
-                        table=table,
-                        user=user,
-                    ).delete()
-
-                messages.success(request, 'Пользователь удален')
-
         messages.success(request, 'Обновление прав успешно!')
         return redirect('manage_table_permissions', table_pk=table.pk)
 
@@ -428,6 +360,9 @@ def revoke_redact_rows(request, share_token):
         # Применяем права ко всем пользователям филиала
         filial_id = request.user.profile.employee.id_filial
         filial = Filial.objects.get(id=filial_id)
+        users = User.objects.filter(
+            profile__employee__id_filial=filial_id
+        )
 
         rows = table.rows.all()
 
@@ -827,16 +762,16 @@ def filter_func(queryset, request, table_obj):
                 try:
                     float_value = float(search_query)
                     column_conditions |= Q(cells__column=column,
-                                           cells__float_value__gte=float_value - 0.001,
-                                           cells__float_value__lte=float_value + 0.001)
+                                           cells__float_value__gte=float_value - 0.1,
+                                           cells__float_value__lte=float_value + 0.1)
                 except ValueError:
                     pass
             elif column.data_type == Column.ColumnType.BOOLEAN:
                 # Поиск по булевым значениям (true/false, да/нет и т.д.)
                 bool_value = None
-                if search_query.lower() in ['true', 'да', 'yes', 'истина']:
+                if search_query.lower() in ['true', 'да', 'yes', '1', 'истина']:
                     bool_value = True
-                elif search_query.lower() in ['false', 'нет', 'no', 'ложь']:
+                elif search_query.lower() in ['false', 'нет', 'no', '0', 'ложь']:
                     bool_value = False
 
                 if bool_value is not None:

@@ -31,8 +31,6 @@ class Employee(models.Model):
     set_date = models.DateField(null=True, blank=True)
     end_date = models.DateField(null=True, blank=True)
 
-    def __str__(self):
-        return f"{self.secondname} {self.firstname} {self.lastname}"
 
 class Department(models.Model):
     id = models.IntegerField(primary_key=True)
@@ -136,11 +134,6 @@ class Column(models.Model):
     table = models.ForeignKey(Table, on_delete=models.CASCADE, related_name='columns')
     name = models.CharField(max_length=100)
     order = models.PositiveIntegerField(default=0)
-    is_required = models.BooleanField(
-        default=False,
-        verbose_name="Обязательное поле",
-        help_text="Если отмечено, поле должно быть заполнено при создании/редактировании строки"
-    )
     data_type = models.CharField(
         max_length=10,
         choices=ColumnType.choices,
@@ -199,7 +192,18 @@ class Row(models.Model):
             return table.rows.all()
         if table.is_admin(user):
             return table.rows.all()
-        result = models.Q(permissions__user=user)
+        result = models.Q(permissions__user=user) | models.Q(created_by=user)
+
+        user_filial = None
+        if hasattr(user, 'profile') and user.profile.employee:
+            user_filial = user.profile.employee.id_filial
+
+        # Если у пользователя есть филиал, добавляем условие для коллег из того же филиала
+        if user_filial:
+            colleagues = User.objects.filter(
+                profile__employee__id_filial=user_filial
+            ).values_list('id', flat=True)
+            result |= models.Q(created_by__in=colleagues)
 
         return table.rows.filter(result).distinct()
 
