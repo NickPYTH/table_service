@@ -31,6 +31,8 @@ class Employee(models.Model):
     set_date = models.DateField(null=True, blank=True)
     end_date = models.DateField(null=True, blank=True)
 
+    def __str__(self):
+        return f"{self.secondname} {self.firstname} {self.lastname}"
 
 class Department(models.Model):
     id = models.IntegerField(primary_key=True)
