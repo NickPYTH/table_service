@@ -827,16 +827,16 @@ def filter_func(queryset, request, table_obj):
                 try:
                     float_value = float(search_query)
                     column_conditions |= Q(cells__column=column,
-                                           cells__float_value__gte=float_value - 0.1,
-                                           cells__float_value__lte=float_value + 0.1)
+                                           cells__float_value__gte=float_value - 0.001,
+                                           cells__float_value__lte=float_value + 0.001)
                 except ValueError:
                     pass
             elif column.data_type == Column.ColumnType.BOOLEAN:
                 # Поиск по булевым значениям (true/false, да/нет и т.д.)
                 bool_value = None
-                if search_query.lower() in ['true', 'да', 'yes', '1', 'истина']:
+                if search_query.lower() in ['true', 'да', 'yes', 'истина']:
                     bool_value = True
-                elif search_query.lower() in ['false', 'нет', 'no', '0', 'ложь']:
+                elif search_query.lower() in ['false', 'нет', 'no', 'ложь']:
                     bool_value = False
 
                 if bool_value is not None:
