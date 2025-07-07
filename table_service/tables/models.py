@@ -192,18 +192,7 @@ class Row(models.Model):
             return table.rows.all()
         if table.is_admin(user):
             return table.rows.all()
-        result = models.Q(permissions__user=user) | models.Q(created_by=user)
-
-        user_filial = None
-        if hasattr(user, 'profile') and user.profile.employee:
-            user_filial = user.profile.employee.id_filial
-
-        # Если у пользователя есть филиал, добавляем условие для коллег из того же филиала
-        if user_filial:
-            colleagues = User.objects.filter(
-                profile__employee__id_filial=user_filial
-            ).values_list('id', flat=True)
-            result |= models.Q(created_by__in=colleagues)
+        result = models.Q(permissions__user=user)
 
         return table.rows.filter(result).distinct()
 

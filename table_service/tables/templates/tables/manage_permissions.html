@@ -36,6 +36,7 @@
                             <th>ID Филиала</th>
                             <th>Разрешить редактировать</th>
                             <th>Разрешить удалять</th>
+                            <th>Действия</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -50,6 +51,16 @@
                             <td>
                                 <input type="checkbox" name="can_delete_{{ perm.user.id }}"
                                        {% if perm.can_delete %}checked{% endif %}>
+                            </td>
+                            <td>
+                                <form method="post" style="display:inline;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="user_id" value="{{ perm.user.id }}">
+                                    <button type="submit" name="remove_user" class="btn btn-sm btn-danger"
+                                            onclick="return confirm('Удалить пользователя из списка?')">
+                                        Удалить
+                                    </button>
+                                </form>
                             </td>
                         </tr>
                         {% endfor %}
@@ -118,6 +129,7 @@
                             <th>ID Филиала</th>
                             <th>Разрешить редактировать</th>
                             <th>Разрешить удалять</th>
+                            <th>Действия</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -132,6 +144,16 @@
                             <td>
                                 <input type="checkbox" name="filial_can_delete_{{ fil_perm.filial.id }}"
                                        {% if fil_perm.can_delete %}checked{% endif %}>
+                            </td>
+                            <td>
+                                <form method="post" style="display:inline;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="filial_id" value="{{ fil_perm.filial.id }}">
+                                    <button type="submit" name="remove_filial" class="btn btn-sm btn-danger"
+                                            onclick="return confirm('Удалить филиал?')">
+                                        Удалить
+                                    </button>
+                                </form>
                             </td>
                         </tr>
                         {% endfor %}
