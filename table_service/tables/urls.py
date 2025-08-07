@@ -1,12 +1,9 @@
 from django.contrib import admin
 from django.urls import path, include
-from django.contrib.auth import views as auth_views
-
-from api.views import CurrentUserView
 from . import views
 
 urlpatterns = [
-    path('api/', include('api.urls')),
+    path('test/', include('api.urls')),
     path('admin/', admin.site.urls),
     path('accounts/', include('django.contrib.auth.urls')),
     path('', views.table_list, name='table_list'),
@@ -27,4 +24,5 @@ urlpatterns = [
     path('api/unlock_row/<int:row_pk>/', views.unlock_row_api, name='unlock_row_api'),
     path('admins/', views.manage_admins, name='manage_admins'),
     path('<int:table_pk>/export/', views.export_table, name='export_table'),
+
 ]

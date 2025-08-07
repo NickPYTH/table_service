@@ -35,7 +35,7 @@ INSTALLED_APPS = [
     'django_tables2',
     'django_bootstrap5',
     'table_service',
-    'api'
+    'api.apps.ApiConfig',
 ]
 
 CORS_ORIGIN_ALLOW_ALL = True
@@ -146,3 +146,4 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
