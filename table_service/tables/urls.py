@@ -6,7 +6,7 @@ from api.views import CurrentUserView
 from . import views
 
 urlpatterns = [
-    path('test/', CurrentUserView.as_view(), name='test'),
+    path('api/', include('api.urls')),
     path('admin/', admin.site.urls),
     path('accounts/', include('django.contrib.auth.urls')),
     path('', views.table_list, name='table_list'),
