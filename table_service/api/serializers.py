@@ -80,4 +80,4 @@ class TableSerializer(serializers.ModelSerializer):
         fields = ['id', 'title', 'owner', 'created_at', 'share_token']
 
     def get_created_at(self, obj):
-        return int(obj.created_at.timestamp())
+        return int(obj.created_at.timestamp()) * 1000
