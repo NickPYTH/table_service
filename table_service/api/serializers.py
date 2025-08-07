@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from tables.models import Filial, Employee, Department, Profile, Admin
+from tables.models import Filial, Employee, Department, Profile, Admin, Table
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -69,3 +69,11 @@ class ProfileCreateUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
         fields = '__all__'
+
+
+class TableSerializer(serializers.ModelSerializer):
+    owner = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
+
+    class Meta:
+        model = Table
+        fields = ['id', 'title', 'owner', 'created_at', 'share_token']
