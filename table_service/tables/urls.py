@@ -1,9 +1,12 @@
 from django.contrib import admin
 from django.urls import path, include
 from django.contrib.auth import views as auth_views
+
+from api.views import CurrentUserView
 from . import views
 
 urlpatterns = [
+    path('test/', CurrentUserView.as_view(), name='test'),
     path('admin/', admin.site.urls),
     path('accounts/', include('django.contrib.auth.urls')),
     path('', views.table_list, name='table_list'),
