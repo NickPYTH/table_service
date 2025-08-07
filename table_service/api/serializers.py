@@ -72,8 +72,14 @@ class ProfileCreateUpdateSerializer(serializers.ModelSerializer):
 
 
 class TableSerializer(serializers.ModelSerializer):
-    owner = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
+    owner = serializers.SerializerMethodField()
+    created_at = serializers.SerializerMethodField()
 
     class Meta:
         model = Table
         fields = ['id', 'title', 'owner', 'created_at', 'share_token']
+
+    def get_owner(self, obj):
+        return obj.owner.username
+    def get_created_at(self, obj):
+        return int(obj.created_at.timestamp())
