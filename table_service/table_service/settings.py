@@ -34,11 +34,17 @@ INSTALLED_APPS = [
     'tables.apps.TablesConfig',
     'django_tables2',
     'django_bootstrap5',
+    'corsheaders',
     'table_service',
     'api.apps.ApiConfig',
 ]
 
 CORS_ORIGIN_ALLOW_ALL = True
+
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:3000',
+    'http://83.222.9.213:6767'
+]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -48,7 +54,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'api.middleware.RemoteUserMiddleware'
+    'api.middleware.RemoteUserMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 ]
 
 AUTHENTICATION_BACKENDS = [
