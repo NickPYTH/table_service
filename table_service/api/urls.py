@@ -11,7 +11,8 @@ router.register(r'departments', views.DepartmentViewSet, basename='departments')
 router.register(r'employees', views.EmployeeViewSet, basename='employees')
 router.register(r'profiles', views.ProfileViewSet, basename='profiles')
 router.register(r'admins', views.AdminViewSet, basename='admins')
-router.register(r'tables', views.TableViewSet, basename='tables')
+router.register(r'tables', views.TableListViewSet, basename='tables')
+router.register(r'table', views.TableDetailViewSet, basename='table-detail')
 
 router.register(r'cells', views.CellViewSet, basename='cells')
 

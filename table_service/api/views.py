@@ -12,7 +12,7 @@ from .serializers import (
     ProfileSerializer,
     AdminSerializer,
     ProfileCreateUpdateSerializer,
-    TableSerializer, CellSerializer
+    TableListSerializer,TableDetailSerializer, CellSerializer
 )
 
 
@@ -82,9 +82,20 @@ class CurrentUserView(APIView):
         print(request)
         return JsonResponse({'user': 'kek'})
 
-class TableViewSet(viewsets.ModelViewSet):
+class TableListViewSet(viewsets.ModelViewSet):
     queryset = Table.objects.all()
-    serializer_class = TableSerializer
+    serializer_class = TableListSerializer
+
+class TableDetailViewSet(viewsets.ModelViewSet):
+    serializer_class = TableDetailSerializer
+    def get_queryset(self):
+        table_id = self.kwargs.get('pk')
+        print("AHAHHAHHAHAHAHA",table_id)
+        return  Table.objects.filter(id=table_id).prefetch_related(
+            'rows__cells',
+            'rows__cells__column',
+        )
+
 
 class CellViewSet(viewsets.ModelViewSet):
     queryset = Cell.objects.all()

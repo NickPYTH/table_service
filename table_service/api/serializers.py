@@ -74,7 +74,7 @@ class ProfileCreateUpdateSerializer(serializers.ModelSerializer):
 class ColumnSerializer(serializers.ModelSerializer):
     class Meta:
         model = Column
-        fields = ['id', 'name', 'order', 'data_type']
+        fields = ['id', 'name', 'order', 'data_type', "name"]
 
 
 
@@ -110,7 +110,7 @@ class CellSerializer(serializers.ModelSerializer):
 
 
 
-class TableSerializer(serializers.ModelSerializer):
+class TableDetailSerializer(serializers.ModelSerializer):
     owner = serializers.StringRelatedField()
     created_at = serializers.SerializerMethodField()
     cells = serializers.SerializerMethodField()
@@ -133,6 +133,18 @@ class TableSerializer(serializers.ModelSerializer):
             }
             for cell in Cell.objects.filter(row__table=obj)
         ]
+
+class TableListSerializer(serializers.ModelSerializer):
+    owner = serializers.StringRelatedField()
+    created_at = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Table
+        fields  = ['id','title','owner','created_at','share_token']
+
+    def get_created_at(self, obj):
+        return int(obj.created_at.timestamp()) * 1000
+
 
 
 # {
