@@ -74,7 +74,7 @@ class ProfileCreateUpdateSerializer(serializers.ModelSerializer):
 class ColumnSerializer(serializers.ModelSerializer):
     class Meta:
         model = Column
-        fields = ['id', 'name', 'order', 'data_type', "name"]
+        fields = ['id', 'name', 'order', 'data_type', "table"]
 
 
 
