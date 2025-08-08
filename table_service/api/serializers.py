@@ -86,11 +86,22 @@ class ColumnSerializer(serializers.ModelSerializer):
 
 
 class RowSerializer(serializers.ModelSerializer):
-    created_by = UserSerializer()
+    created_by = UserSerializer(read_only=True)
+    order = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Row
-        fields = ['id', 'order', 'created_by']
+        fields = ['id', 'order', 'created_by', "table"]
+
+    def create(self, validated_data):
+        table = validated_data.pop('table')
+        owner = self.context['request'].user
+        order = Row.objects.count()
+        row = Row.objects.create(table=table, created_by=owner, order=order)
+        columns = table.columns.all()
+        cells = [Cell(row=row,column=column) for column in columns]
+        Cell.objects.bulk_create(cells)
+        return row
 
 
 class CellSerializer(serializers.ModelSerializer):

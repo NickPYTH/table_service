@@ -17,6 +17,8 @@ router.register(r'columns', views.ColumnViewSet, basename='columns')
 
 router.register(r'cells', views.CellViewSet, basename='cells')
 
+router.register(r'row', views.RowDetailViewSet, basename='row')
+
 urlpatterns = [
     path('', include(router.urls)),
     path('get_current_user', views.CurrentUserView.as_view(), name='get_current_user')

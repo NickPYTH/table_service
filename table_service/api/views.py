@@ -3,7 +3,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework import viewsets, permissions, generics
 from django.contrib.auth.models import User
-from tables.models import Filial, Department, Employee, Profile, Admin, Table, Cell, Column
+from tables.models import Filial, Department, Employee, Profile, Admin, Table, Cell, Column, Row
 from .serializers import (
     UserSerializer,
     FilialSerializer,
@@ -12,7 +12,7 @@ from .serializers import (
     ProfileSerializer,
     AdminSerializer,
     ProfileCreateUpdateSerializer,
-    TableListSerializer, TableDetailSerializer, CellSerializer, ColumnSerializer
+    TableListSerializer, TableDetailSerializer, CellSerializer, ColumnSerializer, RowSerializer
 )
 
 
@@ -103,3 +103,10 @@ class CellViewSet(viewsets.ModelViewSet):
 class ColumnViewSet(viewsets.ModelViewSet):
     queryset = Column.objects.all()
     serializer_class = ColumnSerializer
+
+class RowDetailViewSet(viewsets.ModelViewSet):
+    serializer_class = RowSerializer
+    def get_queryset(self):
+        table_id = self.kwargs.get('pk')
+        return Row.objects.filter(table__id=table_id)
+
