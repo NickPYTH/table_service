@@ -79,7 +79,7 @@ class ColumnSerializer(serializers.ModelSerializer):
 
 
 class RowSerializer(serializers.ModelSerializer):
-    created_by = serializers.StringRelatedField()
+    created_by = UserSerializer()
 
     class Meta:
         model = Row
@@ -128,8 +128,8 @@ class TableDetailSerializer(serializers.ModelSerializer):
             {
                 'id':cell.id,
                 'row':RowSerializer(cell.row, read_only=True).data,
-                'column':RowSerializer(cell.column, read_only=True).data,
-                'value':CellSerializer().get_value(cell)
+                'column':ColumnSerializer(cell.column, read_only=True).data,
+                'value':CellSerializer().get_value(cell),
             }
             for cell in Cell.objects.filter(row__table=obj)
         ]
