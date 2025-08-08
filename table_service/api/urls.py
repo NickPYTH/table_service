@@ -13,6 +13,7 @@ router.register(r'profiles', views.ProfileViewSet, basename='profiles')
 router.register(r'admins', views.AdminViewSet, basename='admins')
 router.register(r'tables', views.TableListViewSet, basename='tables')
 router.register(r'table', views.TableDetailViewSet, basename='table-detail')
+router.register(r'columns', views.ColumnViewSet, basename='columns')
 
 router.register(r'cells', views.CellViewSet, basename='cells')
 
