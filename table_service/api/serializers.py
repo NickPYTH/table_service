@@ -113,14 +113,26 @@ class CellSerializer(serializers.ModelSerializer):
 class TableSerializer(serializers.ModelSerializer):
     owner = serializers.StringRelatedField()
     created_at = serializers.SerializerMethodField()
+    cells = serializers.SerializerMethodField()
 
 
     class Meta:
         model = Table
-        fields = ['id','title','owner','created_at','share_token']
+        fields = ['id','title','owner','created_at','share_token', 'cells']
 
     def get_created_at(self, obj):
         return int(obj.created_at.timestamp()) * 1000
+
+    def get_cells(self, obj):
+        return [
+            {
+                'id':cell.id,
+                'row':RowSerializer(cell.row, read_only=True).data,
+                'column':RowSerializer(cell.column, read_only=True).data,
+                'value':CellSerializer().get_value(cell)
+            }
+            for cell in Cell.objects.filter(row__table=obj)
+        ]
 
 
 # {
