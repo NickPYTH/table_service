@@ -76,6 +76,13 @@ class ColumnSerializer(serializers.ModelSerializer):
         model = Column
         fields = ['id', 'name', 'order', 'data_type', "table"]
 
+    def create(self, validated_data):
+        column = super().create(validated_data)
+        rows = column.table.rows.all()
+        cells = [Cell(row=row, column=column) for row in rows]
+        Cell.objects.bulk_create(cells)
+        return column
+
 
 
 class RowSerializer(serializers.ModelSerializer):
