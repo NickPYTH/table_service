@@ -107,12 +107,12 @@ class RowSerializer(serializers.ModelSerializer):
 class CellSerializer(serializers.ModelSerializer):
     row = RowSerializer()
     column = ColumnSerializer()
-    value = serializers.SerializerMethodField()
+    value = serializers.SerializerMethodField(read_only=True)
     write_value = serializers.CharField(write_only=True, allow_null=True, required=False)
 
     class Meta:
         model = Cell
-        fields = ['id', 'row', 'column', 'value']
+        fields = ['id', 'row', 'column', 'value','write_value']
 
     def get_value(self, obj):
         if obj.column.data_type == Column.ColumnType.TEXT:
