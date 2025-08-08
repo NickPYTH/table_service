@@ -105,8 +105,8 @@ class RowSerializer(serializers.ModelSerializer):
 
 
 class CellSerializer(serializers.ModelSerializer):
-    row = RowSerializer(read_only=True)
-    column = ColumnSerializer(read_only=True)
+    row = RowSerializer()
+    column = ColumnSerializer()
     value = serializers.SerializerMethodField()
 
     class Meta:
