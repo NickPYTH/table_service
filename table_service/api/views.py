@@ -3,7 +3,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework import viewsets, permissions, generics
 from django.contrib.auth.models import User
-from tables.models import Filial,Department,Employee,Profile,Admin,Table
+from tables.models import Filial, Department, Employee, Profile, Admin, Table, Cell
 from .serializers import (
     UserSerializer,
     FilialSerializer,
@@ -12,7 +12,7 @@ from .serializers import (
     ProfileSerializer,
     AdminSerializer,
     ProfileCreateUpdateSerializer,
-    TableSerializer
+    TableSerializer, CellSerializer
 )
 
 
@@ -85,3 +85,7 @@ class CurrentUserView(APIView):
 class TableViewSet(viewsets.ModelViewSet):
     queryset = Table.objects.all()
     serializer_class = TableSerializer
+
+class CellViewSet(viewsets.ModelViewSet):
+    queryset = Cell.objects.all()
+    serializer_class = CellSerializer
