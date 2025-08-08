@@ -90,7 +90,6 @@ class TableDetailViewSet(viewsets.ModelViewSet):
     serializer_class = TableDetailSerializer
     def get_queryset(self):
         table_id = self.kwargs.get('pk')
-        print("AHAHHAHHAHAHAHA",table_id)
         return  Table.objects.filter(id=table_id).prefetch_related(
             'rows__cells',
             'rows__cells__column',

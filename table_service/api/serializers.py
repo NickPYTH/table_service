@@ -111,7 +111,7 @@ class CellSerializer(serializers.ModelSerializer):
 
 
 class TableDetailSerializer(serializers.ModelSerializer):
-    owner = serializers.StringRelatedField()
+    owner = UserSerializer()
     created_at = serializers.SerializerMethodField()
     cells = serializers.SerializerMethodField()
 
@@ -135,7 +135,7 @@ class TableDetailSerializer(serializers.ModelSerializer):
         ]
 
 class TableListSerializer(serializers.ModelSerializer):
-    owner = serializers.StringRelatedField()
+    owner = UserSerializer()
     created_at = serializers.SerializerMethodField()
 
     class Meta:
