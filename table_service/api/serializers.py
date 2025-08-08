@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from tables.models import Filial, Employee, Department, Profile, Admin, Table, Column, Cell, Row
-
+from datetime import datetime
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -108,6 +108,7 @@ class CellSerializer(serializers.ModelSerializer):
     row = RowSerializer()
     column = ColumnSerializer()
     value = serializers.SerializerMethodField()
+    write_value = serializers.CharField(write_only=True, allow_null=True, required=False)
 
     class Meta:
         model = Cell
@@ -125,6 +126,36 @@ class CellSerializer(serializers.ModelSerializer):
         elif obj.column.data_type == Column.ColumnType.DATE:
             return obj.date_value.isoformat() if obj.date_value else None
         return None
+
+    def validate(self, data):
+        write_value = data.get('write_value')
+        if write_value is not None:
+            column = self.instance.column if self.instance else data.get('column')
+            if not column:
+                raise serializers.ValidationError("Column is required")
+            try:
+                if column.data_type == Column.ColumnType.TEXT:
+                    data['text_value'] = str(write_value)
+                elif column.data_type == Column.ColumnType.INTEGER:
+                    data['integer_value'] = int(write_value)
+                elif column.data_type == Column.ColumnType.FLOAT:
+                    data['float_value'] = float(write_value)
+                elif column.data_type == Column.ColumnType.BOOLEAN:
+                    data['boolean_value'] = write_value.lower() in ['true', '1', 'yes']
+                elif column.data_type == Column.ColumnType.DATE:
+                    data['date_value'] = datetime.strptime(write_value, '%Y-%m-%d').date()
+            except (ValueError, TypeError) as e:
+                raise serializers.ValidationError(f"Invalid value for {column.data_type}: {str(e)}")
+        return data
+
+    def create(self, validated_data):
+        validated_data.pop('write_value', None)
+        return  super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        validated_data.pop('write_value', None)
+        return super().update(instance, validated_data)
+
 
 
 
