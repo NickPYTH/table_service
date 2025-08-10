@@ -19,6 +19,8 @@ router.register(r'cells', views.CellViewSet, basename='cells')
 
 router.register(r'row', views.RowDetailViewSet, basename='row')
 
+router.register('rowpermissions', views.RowPermissionViewSet, basename='row-permissions')
+
 urlpatterns = [
     path('', include(router.urls)),
     path('get_current_user', views.CurrentUserView.as_view(), name='get_current_user')

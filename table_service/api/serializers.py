@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from tables.models import Filial, Employee, Department, Profile, Admin, Table, Column, Cell, Row
+from tables.models import Filial, Employee, Department, Profile, Admin, Table, Column, Cell, Row, RowPermission
 from datetime import datetime
 
 class UserSerializer(serializers.ModelSerializer):
@@ -88,6 +88,7 @@ class ColumnSerializer(serializers.ModelSerializer):
 class RowSerializer(serializers.ModelSerializer):
     created_by = UserSerializer(read_only=True)
     order = serializers.IntegerField(read_only=True)
+    id = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Row
@@ -193,6 +194,15 @@ class TableListSerializer(serializers.ModelSerializer):
 
     def get_created_at(self, obj):
         return int(obj.created_at.timestamp()) * 1000
+
+
+
+class RowPermissionSerializer(serializers.ModelSerializer):
+    user = UserSerializer()
+    row = RowSerializer()
+    class Meta:
+        model = RowPermission
+        fields = ['row','user','can_edit','can_delete']
 
 
 
