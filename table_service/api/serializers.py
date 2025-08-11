@@ -82,6 +82,10 @@ class ColumnSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         column = super().create(validated_data)
+        columns = Column.objects.filter(table=column.table)
+        user = self.context['request'].user
+        if len(columns) == 0:
+            Row.objects.create(table=column.table, created_by=user)
         rows = column.table.rows.all()
         cells = [Cell(row=row, column=column) for row in rows]
         Cell.objects.bulk_create(cells)

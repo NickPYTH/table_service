@@ -124,6 +124,7 @@ class RowListViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
+
 class TablePermissionViewSet(viewsets.ModelViewSet):
     serializer_class = TablePermissionsSerializer
     queryset = TablePermission.objects.all()
