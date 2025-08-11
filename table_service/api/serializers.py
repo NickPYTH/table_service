@@ -81,8 +81,9 @@ class ColumnSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'order', 'data_type', "table"]
 
     def create(self, validated_data):
+        table = validated_data['table']
+        columns = Column.objects.filter(table=table)
         column = super().create(validated_data)
-        columns = Column.objects.filter(table=column.table)
         user = self.context['request'].user
         if len(columns) == 0:
             Row.objects.create(table=column.table, created_by=user)
