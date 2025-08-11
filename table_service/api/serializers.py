@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from tables.models import Filial, Employee, Department, Profile, Admin, Table, Column, Cell, Row, RowPermission
+from tables.models import Filial, Employee, Department, Profile, Admin, Table, Column, Cell, Row, RowPermission, \
+    TablePermission
 from datetime import datetime
 
 class UserSerializer(serializers.ModelSerializer):
@@ -161,7 +162,7 @@ class CellSerializer(serializers.ModelSerializer):
 
 
 class TableDetailSerializer(serializers.ModelSerializer):
-    owner = UserSerializer()
+    owner = UserSerializer(read_only=True)
     created_at = serializers.SerializerMethodField()
     cells = serializers.SerializerMethodField()
     id = serializers.IntegerField(read_only=True)
@@ -211,6 +212,13 @@ class TableListSerializer(serializers.ModelSerializer):
     def get_created_at(self, obj):
         return int(obj.created_at.timestamp()) * 1000
 
+
+class TablePermissionsSerializer(serializers.ModelSerializer):
+    # В модельке сделать уникальный ключ по двум полям, может быть задвоение
+    user = UserSerializer()
+    class Meta:
+        model = TablePermission
+        fields = ['id','user','can_view','table']
 
 
 class RowPermissionSerializer(serializers.ModelSerializer):
