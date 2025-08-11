@@ -23,6 +23,8 @@ router.register(r'rows', views.RowListViewSet, basename='rows')
 
 router.register('tablepermissions', views.TablePermissionViewSet, basename='tablepermissions')
 
+router.register('tbfilialpermissions', views.TableFilialPermissionViewSet, basename='tbfilialpermissions')
+
 router.register('rowpermissions', views.RowPermissionViewSet, basename='row-permissions')
 
 urlpatterns = [

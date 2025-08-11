@@ -2,7 +2,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from tables.models import Filial, Employee, Department, Profile, Admin, Table, Column, Cell, Row, RowPermission, \
-    TablePermission
+    TablePermission, TableFilialPermission
 from datetime import datetime
 
 class UserSerializer(serializers.ModelSerializer):
@@ -11,11 +11,13 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ['id', 'username', 'email', 'first_name', 'last_name']
 
 
+
 class FilialSerializer(serializers.ModelSerializer):
     class Meta:
         model = Filial
         fields = '__all__'
         extra_kwargs = {
+            'id': {'read_only': True},
             'set_date': {'format': '%Y-%m-%d'},
             'end_date': {'format': '%Y-%m-%d'}
         }
@@ -237,6 +239,22 @@ class TablePermissionsSerializer(serializers.ModelSerializer):
             return permissions
 
 
+class TableFilialPermissionsSerializer(serializers.ModelSerializer):
+    filial_id = serializers.IntegerField()
+    class Meta:
+        model = TableFilialPermission
+        fields = ['id','table','filial_id','can_view']
+
+    def create(self, validated_data):
+        filial = get_object_or_404(Filial,id=validated_data['filial_id'])
+        if filial:
+            permissions = TableFilialPermission.objects.create(filial=filial, **validated_data)
+            return permissions
+
+
+
+
+
 
 
 class RowPermissionSerializer(serializers.ModelSerializer):
@@ -247,13 +265,3 @@ class RowPermissionSerializer(serializers.ModelSerializer):
         fields = ['row','user','can_edit','can_delete']
 
 
-
-
-
-
-# {
-# table:{}
-# cells:[
-# {id row: {}, column: {}, type:"str",value:"some value"}
-# ]
-# }

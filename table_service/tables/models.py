@@ -10,7 +10,7 @@ from datetime import date
 
 
 class Filial(models.Model):
-    id = models.IntegerField(primary_key=True)
+    # id = models.IntegerField(primary_key=True)
     name = models.CharField(null=True, blank=True)
     long_name = models.CharField(null=True, blank=True)
     short_name = models.CharField(null=True, blank=True)
@@ -20,7 +20,7 @@ class Filial(models.Model):
 
 
 class Employee(models.Model):
-    id = models.IntegerField(primary_key=True)
+    # id = models.IntegerField(primary_key=True)
     id_filial = models.IntegerField(null=True, blank=True)
     id_department = models.IntegerField(null=True, blank=True)
     post_name = models.CharField(null=True, blank=True)
@@ -33,7 +33,7 @@ class Employee(models.Model):
 
 
 class Department(models.Model):
-    id = models.IntegerField(primary_key=True)
+    # id = models.IntegerField(primary_key=True)
     id_parent = models.IntegerField(null=True, blank=True)
     id_filial = models.IntegerField(null=True, blank=True)
     name = models.CharField(null=True, blank=True)

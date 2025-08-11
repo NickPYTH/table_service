@@ -4,7 +4,7 @@ from rest_framework.views import APIView
 from rest_framework import viewsets, permissions, generics
 from django.contrib.auth.models import User
 from tables.models import Filial, Department, Employee, Profile, Admin, Table, Cell, Column, Row, RowPermission, \
-    TablePermission
+    TablePermission, TableFilialPermission
 from .serializers import (
     UserSerializer,
     FilialSerializer,
@@ -14,7 +14,7 @@ from .serializers import (
     AdminSerializer,
     ProfileCreateUpdateSerializer,
     TableListSerializer, TableDetailSerializer, CellSerializer, ColumnSerializer, RowSerializer,
-    RowPermissionSerializer, TablePermissionsSerializer
+    RowPermissionSerializer, TablePermissionsSerializer, TableFilialPermissionsSerializer
 )
 
 
@@ -122,6 +122,11 @@ class RowListViewSet(viewsets.ModelViewSet):
 class TablePermissionViewSet(viewsets.ModelViewSet):
     serializer_class = TablePermissionsSerializer
     queryset = TablePermission.objects.all()
+
+
+class TableFilialPermissionViewSet(viewsets.ModelViewSet):
+    serializer_class = TableFilialPermissionsSerializer
+    queryset = TableFilialPermission.objects.all()
 
 
 
