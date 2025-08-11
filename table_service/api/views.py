@@ -1,4 +1,6 @@
+from rest_framework.decorators import action
 from django.http import JsonResponse
+from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework import viewsets, permissions, generics
@@ -114,9 +116,12 @@ class RowDetailViewSet(viewsets.ModelViewSet):
 
 class RowListViewSet(viewsets.ModelViewSet):
     serializer_class = RowSerializer
-    def get_queryset(self):
-        table_id = self.kwargs.get('pk')
-        return Row.objects.filter(table__id=table_id)
+    queryset = Row.objects.all()
+    @action(detail=False, methods=['GET'], url_path='table/(?P<table_id>\d+)')
+    def by_table(self, request, table_id=None):
+        queryset = Row.objects.filter(table_id=table_id)
+        serializer = RowSerializer(queryset, many=True)
+        return Response(serializer.data)
 
 
 class TablePermissionViewSet(viewsets.ModelViewSet):

@@ -254,14 +254,18 @@ class TableFilialPermissionsSerializer(serializers.ModelSerializer):
 
 
 
-
-
-
 class RowPermissionSerializer(serializers.ModelSerializer):
-    user = UserSerializer()
-    row = RowSerializer()
+    user_id = serializers.IntegerField()
+    row_id = serializers.IntegerField()
     class Meta:
         model = RowPermission
-        fields = ['row','user','can_edit','can_delete']
+        fields = ['row_id','user_id','can_edit','can_delete']
+
+    def create(self, validated_data):
+        row = get_object_or_404(Row,id=validated_data['row_id'])
+        user = get_object_or_404(User,id=validated_data['user_id'])
+        if user and row:
+            permissions = RowPermission.objects.create(row=row, user=user, **validated_data)
+            return permissions
 
 
