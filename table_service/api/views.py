@@ -110,6 +110,12 @@ class RowDetailViewSet(viewsets.ModelViewSet):
         row_id = self.kwargs.get('pk')
         return Row.objects.filter(id=row_id)
 
+class RowListViewSet(viewsets.ModelViewSet):
+    serializer_class = RowSerializer
+    def get_queryset(self):
+        table_id = self.kwargs.get('pk')
+        return Row.objects.filter(table__id=table_id)
+
 
 class RowPermissionViewSet(viewsets.ModelViewSet):
     serializer_class = RowPermissionSerializer
