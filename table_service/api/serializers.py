@@ -172,17 +172,15 @@ class TableDetailSerializer(serializers.ModelSerializer):
         fields = ['id','title','owner','created_at','share_token', 'cells']
         extra_kwargs = {
             'share_token': {'read_only': True},
-            'owner': {'read_only': True},
             'created_at': {'read_only': True},
             'cells': {'read_only': True},
         }
 
     def create(self, validated_data):
         owner = self.context['request'].user
-        share_token = 'Заглушка'
         created_at = datetime.now()
         title = validated_data.pop('title')
-        table = Table.objects.create(owner=owner, title=title, created_at=created_at, share_token=share_token)
+        table = Table.objects.create(owner=owner, title=title, created_at=created_at)
         return table
 
 
@@ -202,15 +200,26 @@ class TableDetailSerializer(serializers.ModelSerializer):
         ]
 
 class TableListSerializer(serializers.ModelSerializer):
-    owner = UserSerializer()
+    owner = UserSerializer(read_only=True)
     created_at = serializers.SerializerMethodField()
 
     class Meta:
         model = Table
         fields  = ['id','title','owner','created_at','share_token']
+        extra_kwargs = {
+            'share_token': {'read_only': True},
+            'created_at': {'read_only': True},
+        }
 
     def get_created_at(self, obj):
         return int(obj.created_at.timestamp()) * 1000
+
+    def create(self, validated_data):
+        owner = self.context['request'].user
+        created_at = datetime.now()
+        title = validated_data.pop('title')
+        table = Table.objects.create(owner=owner, title=title, created_at=created_at)
+        return table
 
 
 class TablePermissionsSerializer(serializers.ModelSerializer):
