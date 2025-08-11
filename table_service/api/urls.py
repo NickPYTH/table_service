@@ -21,6 +21,8 @@ router.register(r'row', views.RowDetailViewSet, basename='row')
 
 router.register(r'rows', views.RowListViewSet, basename='rows')
 
+router.register('tablepermissions', views.TablePermissionViewSet, basename='tablepermissions')
+
 router.register('rowpermissions', views.RowPermissionViewSet, basename='row-permissions')
 
 urlpatterns = [

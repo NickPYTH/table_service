@@ -1,3 +1,4 @@
+from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from tables.models import Filial, Employee, Department, Profile, Admin, Table, Column, Cell, Row, RowPermission, \
@@ -224,10 +225,18 @@ class TableListSerializer(serializers.ModelSerializer):
 
 class TablePermissionsSerializer(serializers.ModelSerializer):
     # В модельке сделать уникальный ключ по двум полям, может быть задвоение
-    user = UserSerializer()
+    user_id = serializers.IntegerField()
     class Meta:
         model = TablePermission
-        fields = ['id','user','can_view','table']
+        fields = ['id','user_id','can_view','table']
+
+    def create(self, validated_data):
+        user = get_object_or_404(User,id=validated_data['user_id'])
+        if user:
+            permissions = TablePermission.objects.create(user=user, **validated_data)
+            return permissions
+
+
 
 
 class RowPermissionSerializer(serializers.ModelSerializer):

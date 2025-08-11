@@ -123,6 +123,8 @@ class TablePermissionViewSet(viewsets.ModelViewSet):
     serializer_class = TablePermissionsSerializer
     queryset = TablePermission.objects.all()
 
+
+
 class RowPermissionViewSet(viewsets.ModelViewSet):
     serializer_class = RowPermissionSerializer
     queryset = RowPermission.objects.all()
