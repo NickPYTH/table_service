@@ -135,16 +135,47 @@ class TablePermissionViewSet(viewsets.ModelViewSet):
     serializer_class = TablePermissionsSerializer
     queryset = TablePermission.objects.all()
 
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        table_id = self.request.query_params.get('table_id')
+        user_id = self.request.query_params.get('user_id')
+        if table_id:
+            queryset = queryset.filter(table_id=table_id)
+        if user_id:
+            queryset = queryset.filter(user_id=user_id)
+        return queryset
+
 
 class TableFilialPermissionViewSet(viewsets.ModelViewSet):
     serializer_class = TableFilialPermissionsSerializer
     queryset = TableFilialPermission.objects.all()
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        filial_id = self.request.query_params.get('filial_id')
+        table_id = self.request.query_params.get('table_id')
+        if filial_id:
+            queryset = queryset.filter(filial__id=filial_id)
+        if table_id:
+            queryset = queryset.filter(table__id=table_id)
+        return queryset
 
 
 
 class RowPermissionViewSet(viewsets.ModelViewSet):
     serializer_class = RowPermissionSerializer
     queryset = RowPermission.objects.all()
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        user_id = self.request.query_params.get('user_id')
+        row_id = self.request.query_params.get('row_id')
+        if user_id:
+            queryset = queryset.filter(user__id=user_id)
+        if row_id:
+            queryset = queryset.filter(row__id=row_id)
+        return queryset
+
 
 class RowFilialPermissionViewSet(viewsets.ModelViewSet):
     serializer_class = RowFilialPermissionSerializer
