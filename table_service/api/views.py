@@ -1,10 +1,8 @@
 from django.contrib.auth.models import User
 from django.http import JsonResponse
 from rest_framework import viewsets, permissions, generics
-from rest_framework.decorators import action
-from rest_framework.response import Response
 from rest_framework.views import APIView
-
+from .helper import get_table_ids_permissions
 from tables.models import Filial, Department, Employee, Profile, Admin, Table, Cell, Column, Row, RowPermission, \
     TablePermission, TableFilialPermission, RowFilialPermission
 from .serializers import (
@@ -94,26 +92,26 @@ class TableListViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = super().get_queryset()
         user = self.request.user
-        permissions_user = set(TablePermission.objects.filter(user=user).values_list('table__id', flat=True))
-        filial_id = (Profile.objects
-                    .filter(user=user)
-                    .select_related('employee')
-                    .values_list('employee__id_filial', flat=True)
-                    .first())
-        permissions_filial = set(TableFilialPermission.objects.filter(filial__id=filial_id).values_list('table__id', flat=True))
-        all_permissions = permissions_user | permissions_filial
+        all_permissions = get_table_ids_permissions(user)
         if all_permissions:
             queryset = queryset.filter(id__in=all_permissions)
         return queryset
 
 class TableDetailViewSet(viewsets.ModelViewSet):
     serializer_class = TableDetailSerializer
-    def get_queryset(self):
-        table_id = self.kwargs.get('pk')
-        return  Table.objects.filter(id=table_id).prefetch_related(
+    queryset = Table.objects.all().prefetch_related(
             'rows__cells',
             'rows__cells__column',
         )
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        table_id = self.kwargs.get('pk')
+        queryset = queryset.filter(table_id=table_id)
+        user = self.request.user
+        all_permissions = get_table_ids_permissions(user)
+        if all_permissions:
+            queryset = queryset.filter(id__in=all_permissions)
+        return queryset
 
     def perform_update(self, serializer):
         instance = serializer.save()
