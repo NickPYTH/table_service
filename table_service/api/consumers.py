@@ -1,16 +1,16 @@
-from channels.generic.websocket import AsyncWebsocketConsumer
-import json
+from channels.generic.websocket import AsyncJsonWebsocketConsumer
 
-class TableUpdatesConsumer(AsyncWebsocketConsumer):
+
+class TableUpdatesConsumer(AsyncJsonWebsocketConsumer):
     async def connect(self):
         await self.accept()
-        await self.send(text_data=json.dumps({
-            'type': 'connection_established',
-            'message': 'You are now connected!'
-        }))
+        await self.channel_layer.group_add("table_list_updates", self.channel_name)
 
     async def disconnect(self, close_code):
-        pass
+        await self.channel_layer.group_discard("table_list_updates", self.channel_name)
 
-    async def receive(self, text_data):
-        pass
+    async def table_updated(self, event):
+        await self.send_json({
+            "type": "table_update",
+            "data": event["data"]
+        })

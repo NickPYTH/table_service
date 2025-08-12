@@ -1,10 +1,10 @@
-from rest_framework.decorators import action
-from django.http import JsonResponse
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.views import APIView
-from rest_framework import viewsets, permissions, generics
 from django.contrib.auth.models import User
+from django.http import JsonResponse
+from rest_framework import viewsets, permissions, generics
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
 from tables.models import Filial, Department, Employee, Profile, Admin, Table, Cell, Column, Row, RowPermission, \
     TablePermission, TableFilialPermission
 from .serializers import (
@@ -18,6 +18,7 @@ from .serializers import (
     TableListSerializer, TableDetailSerializer, CellSerializer, ColumnSerializer, RowSerializer,
     RowPermissionSerializer, TablePermissionsSerializer, TableFilialPermissionsSerializer
 )
+from .utils import send_table_update
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -98,6 +99,11 @@ class TableDetailViewSet(viewsets.ModelViewSet):
             'rows__cells',
             'rows__cells__column',
         )
+
+    def perform_update(self, serializer):
+        instance = serializer.save()
+        send_table_update(instance)
+        return instance
 
 
 class CellViewSet(viewsets.ModelViewSet):
