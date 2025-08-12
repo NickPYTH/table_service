@@ -24,6 +24,9 @@ ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'test-vapp-03.sgp.ru', 'sco1-vapp-04.
 # Application definition
 
 INSTALLED_APPS = [
+    'channels',
+    'daphne',
+    'table_service',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -35,17 +38,28 @@ INSTALLED_APPS = [
     'django_tables2',
     'django_bootstrap5',
     'corsheaders',
-    'table_service',
+
     'api.apps.ApiConfig',
 ]
 
-CORS_ORIGIN_ALLOW_ALL = True
 
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer",
+    },
+}
+
+ASGI_APPLICATION = 'table_service.asgi.application'
+WSGI_APPLICATION = 'table_service.wsgi.application'  # Можно оставить для совместимости
+
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',
-    'http://83.222.9.213:6767'
+    'http://83.222.9.213:6767',
+    'ws://localhost:3000',  # Добавьте WebSocket протокол
+    'ws://83.222.9.213:6767',
 ]
-
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -91,7 +105,6 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'table_service.wsgi.application'
 
 LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/'  # куда перенаправлять после успешного входа
