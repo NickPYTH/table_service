@@ -11,7 +11,7 @@
 16389||16388|C|G
 16389||16390|C|G
 16389||16388|T|G</Grants>
-      <IntrospectionStateNumber>41034</IntrospectionStateNumber>
+      <IntrospectionStateNumber>41198</IntrospectionStateNumber>
       <ServerVersion>15.3</ServerVersion>
       <StartupTime>1754518991</StartupTime>
       <TimeZones>true ACDT
@@ -1448,7 +1448,7 @@ true posixrules
 20127||16390|U|G
 22730||16390|C|G
 22730||16390|U|G</Grants>
-      <IntrospectionStateNumber>41034</IntrospectionStateNumber>
+      <IntrospectionStateNumber>41198</IntrospectionStateNumber>
       <ObjectId>16389</ObjectId>
       <OwnerName>root</OwnerName>
     </database>
@@ -4863,17 +4863,17 @@ true posixrules
     </language>
     <schema id="262" parent="2" name="ar">
       <ObjectId>19465</ObjectId>
-      <StateNumber>41031</StateNumber>
+      <StateNumber>41191</StateNumber>
       <OwnerName>gen_user</OwnerName>
     </schema>
     <schema id="263" parent="2" name="cinema">
       <ObjectId>20127</ObjectId>
-      <StateNumber>41031</StateNumber>
+      <StateNumber>41191</StateNumber>
       <OwnerName>gen_user</OwnerName>
     </schema>
     <schema id="264" parent="2" name="hotel">
       <ObjectId>17188</ObjectId>
-      <StateNumber>41031</StateNumber>
+      <StateNumber>41191</StateNumber>
       <OwnerName>gen_user</OwnerName>
     </schema>
     <schema id="265" parent="2" name="information_schema">
@@ -4902,12 +4902,12 @@ true posixrules
       <IntrospectionStateNumber>41034</IntrospectionStateNumber>
       <LastIntrospectionLocalTimestamp>2025-08-07.08:22:03</LastIntrospectionLocalTimestamp>
       <ObjectId>2200</ObjectId>
-      <StateNumber>41031</StateNumber>
+      <StateNumber>41191</StateNumber>
       <OwnerName>pg_database_owner</OwnerName>
     </schema>
     <schema id="268" parent="2" name="sklad">
       <ObjectId>18782</ObjectId>
-      <StateNumber>41031</StateNumber>
+      <StateNumber>41191</StateNumber>
       <OwnerName>gen_user</OwnerName>
     </schema>
     <schema id="269" parent="2" name="table_service">
@@ -5128,10 +5128,10 @@ true posixrules
 23173||16390|t|G
 23173||16390|D|G
 23173||16390|w|G</Grants>
-      <IntrospectionStateNumber>41034</IntrospectionStateNumber>
-      <LastIntrospectionLocalTimestamp>2025-08-07.08:22:03</LastIntrospectionLocalTimestamp>
+      <IntrospectionStateNumber>41198</IntrospectionStateNumber>
+      <LastIntrospectionLocalTimestamp>2025-08-08.05:53:32</LastIntrospectionLocalTimestamp>
       <ObjectId>22730</ObjectId>
-      <StateNumber>41031</StateNumber>
+      <StateNumber>41191</StateNumber>
       <OwnerName>gen_user</OwnerName>
     </schema>
     <sequence id="270" parent="267" name="subscriptions_id_seq">
@@ -5152,7 +5152,7 @@ true posixrules
       <ObjectId>22753</ObjectId>
       <SequenceIdentity>1</SequenceIdentity>
       <StartValue>1</StartValue>
-      <StateNumber>41031</StateNumber>
+      <StateNumber>41191</StateNumber>
       <StoredType>integer|0s</StoredType>
       <OwnerName>gen_user</OwnerName>
     </sequence>
@@ -5160,7 +5160,7 @@ true posixrules
       <ObjectId>22761</ObjectId>
       <SequenceIdentity>1</SequenceIdentity>
       <StartValue>1</StartValue>
-      <StateNumber>41031</StateNumber>
+      <StateNumber>41191</StateNumber>
       <StoredType>bigint|0s</StoredType>
       <OwnerName>gen_user</OwnerName>
     </sequence>
@@ -5168,7 +5168,7 @@ true posixrules
       <ObjectId>22747</ObjectId>
       <SequenceIdentity>1</SequenceIdentity>
       <StartValue>1</StartValue>
-      <StateNumber>41031</StateNumber>
+      <StateNumber>41191</StateNumber>
       <StoredType>integer|0s</StoredType>
       <OwnerName>gen_user</OwnerName>
     </sequence>
@@ -5176,7 +5176,7 @@ true posixrules
       <ObjectId>22775</ObjectId>
       <SequenceIdentity>1</SequenceIdentity>
       <StartValue>1</StartValue>
-      <StateNumber>41031</StateNumber>
+      <StateNumber>41191</StateNumber>
       <StoredType>bigint|0s</StoredType>
       <OwnerName>gen_user</OwnerName>
     </sequence>
@@ -5184,7 +5184,7 @@ true posixrules
       <ObjectId>22767</ObjectId>
       <SequenceIdentity>1</SequenceIdentity>
       <StartValue>1</StartValue>
-      <StateNumber>41031</StateNumber>
+      <StateNumber>41191</StateNumber>
       <StoredType>integer|0s</StoredType>
       <OwnerName>gen_user</OwnerName>
     </sequence>
@@ -5192,7 +5192,7 @@ true posixrules
       <ObjectId>22781</ObjectId>
       <SequenceIdentity>1</SequenceIdentity>
       <StartValue>1</StartValue>
-      <StateNumber>41031</StateNumber>
+      <StateNumber>41191</StateNumber>
       <StoredType>bigint|0s</StoredType>
       <OwnerName>gen_user</OwnerName>
     </sequence>
@@ -5200,7 +5200,7 @@ true posixrules
       <ObjectId>22839</ObjectId>
       <SequenceIdentity>1</SequenceIdentity>
       <StartValue>1</StartValue>
-      <StateNumber>41031</StateNumber>
+      <StateNumber>41191</StateNumber>
       <StoredType>integer|0s</StoredType>
       <OwnerName>gen_user</OwnerName>
     </sequence>
@@ -5208,7 +5208,7 @@ true posixrules
       <ObjectId>22739</ObjectId>
       <SequenceIdentity>1</SequenceIdentity>
       <StartValue>1</StartValue>
-      <StateNumber>41031</StateNumber>
+      <StateNumber>41191</StateNumber>
       <StoredType>integer|0s</StoredType>
       <OwnerName>gen_user</OwnerName>
     </sequence>
@@ -5216,7 +5216,7 @@ true posixrules
       <ObjectId>22731</ObjectId>
       <SequenceIdentity>1</SequenceIdentity>
       <StartValue>1</StartValue>
-      <StateNumber>41031</StateNumber>
+      <StateNumber>41191</StateNumber>
       <StoredType>bigint|0s</StoredType>
       <OwnerName>gen_user</OwnerName>
     </sequence>
@@ -5224,7 +5224,7 @@ true posixrules
       <ObjectId>23172</ObjectId>
       <SequenceIdentity>1</SequenceIdentity>
       <StartValue>1</StartValue>
-      <StateNumber>41031</StateNumber>
+      <StateNumber>41191</StateNumber>
       <StoredType>bigint|0s</StoredType>
       <OwnerName>gen_user</OwnerName>
     </sequence>
@@ -5232,7 +5232,7 @@ true posixrules
       <ObjectId>22899</ObjectId>
       <SequenceIdentity>1</SequenceIdentity>
       <StartValue>1</StartValue>
-      <StateNumber>41031</StateNumber>
+      <StateNumber>41191</StateNumber>
       <StoredType>bigint|0s</StoredType>
       <OwnerName>gen_user</OwnerName>
     </sequence>
@@ -5240,7 +5240,7 @@ true posixrules
       <ObjectId>22892</ObjectId>
       <SequenceIdentity>1</SequenceIdentity>
       <StartValue>1</StartValue>
-      <StateNumber>41031</StateNumber>
+      <StateNumber>41191</StateNumber>
       <StoredType>bigint|0s</StoredType>
       <OwnerName>gen_user</OwnerName>
     </sequence>
@@ -5248,7 +5248,7 @@ true posixrules
       <ObjectId>23003</ObjectId>
       <SequenceIdentity>1</SequenceIdentity>
       <StartValue>1</StartValue>
-      <StateNumber>41031</StateNumber>
+      <StateNumber>41191</StateNumber>
       <StoredType>bigint|0s</StoredType>
       <OwnerName>gen_user</OwnerName>
     </sequence>
@@ -5256,7 +5256,7 @@ true posixrules
       <ObjectId>22885</ObjectId>
       <SequenceIdentity>1</SequenceIdentity>
       <StartValue>1</StartValue>
-      <StateNumber>41031</StateNumber>
+      <StateNumber>41191</StateNumber>
       <StoredType>bigint|0s</StoredType>
       <OwnerName>gen_user</OwnerName>
     </sequence>
@@ -5264,7 +5264,7 @@ true posixrules
       <ObjectId>23047</ObjectId>
       <SequenceIdentity>1</SequenceIdentity>
       <StartValue>1</StartValue>
-      <StateNumber>41031</StateNumber>
+      <StateNumber>41191</StateNumber>
       <StoredType>bigint|0s</StoredType>
       <OwnerName>gen_user</OwnerName>
     </sequence>
@@ -5272,7 +5272,7 @@ true posixrules
       <ObjectId>23067</ObjectId>
       <SequenceIdentity>1</SequenceIdentity>
       <StartValue>1</StartValue>
-      <StateNumber>41031</StateNumber>
+      <StateNumber>41191</StateNumber>
       <StoredType>bigint|0s</StoredType>
       <OwnerName>gen_user</OwnerName>
     </sequence>
@@ -5280,7 +5280,7 @@ true posixrules
       <ObjectId>22907</ObjectId>
       <SequenceIdentity>1</SequenceIdentity>
       <StartValue>1</StartValue>
-      <StateNumber>41031</StateNumber>
+      <StateNumber>41191</StateNumber>
       <StoredType>bigint|0s</StoredType>
       <OwnerName>gen_user</OwnerName>
     </sequence>
@@ -5288,7 +5288,7 @@ true posixrules
       <ObjectId>22877</ObjectId>
       <SequenceIdentity>1</SequenceIdentity>
       <StartValue>1</StartValue>
-      <StateNumber>41031</StateNumber>
+      <StateNumber>41191</StateNumber>
       <StoredType>bigint|0s</StoredType>
       <OwnerName>gen_user</OwnerName>
     </sequence>
@@ -5296,7 +5296,7 @@ true posixrules
       <ObjectId>23126</ObjectId>
       <SequenceIdentity>1</SequenceIdentity>
       <StartValue>1</StartValue>
-      <StateNumber>41031</StateNumber>
+      <StateNumber>41191</StateNumber>
       <StoredType>bigint|0s</StoredType>
       <OwnerName>gen_user</OwnerName>
     </sequence>
@@ -5304,7 +5304,7 @@ true posixrules
       <ObjectId>23106</ObjectId>
       <SequenceIdentity>1</SequenceIdentity>
       <StartValue>1</StartValue>
-      <StateNumber>41031</StateNumber>
+      <StateNumber>41191</StateNumber>
       <StoredType>bigint|0s</StoredType>
       <OwnerName>gen_user</OwnerName>
     </sequence>
@@ -5312,157 +5312,157 @@ true posixrules
       <ObjectId>23086</ObjectId>
       <SequenceIdentity>1</SequenceIdentity>
       <StartValue>1</StartValue>
-      <StateNumber>41031</StateNumber>
+      <StateNumber>41191</StateNumber>
       <StoredType>bigint|0s</StoredType>
       <OwnerName>gen_user</OwnerName>
     </sequence>
     <table id="293" parent="269" name="auth_group">
       <ObjectId>22754</ObjectId>
-      <StateNumber>41031</StateNumber>
+      <StateNumber>41191</StateNumber>
       <AccessMethodId>2</AccessMethodId>
       <OwnerName>gen_user</OwnerName>
     </table>
     <table id="294" parent="269" name="auth_group_permissions">
       <ObjectId>22762</ObjectId>
-      <StateNumber>41031</StateNumber>
+      <StateNumber>41191</StateNumber>
       <AccessMethodId>2</AccessMethodId>
       <OwnerName>gen_user</OwnerName>
     </table>
     <table id="295" parent="269" name="auth_permission">
       <ObjectId>22748</ObjectId>
-      <StateNumber>41031</StateNumber>
+      <StateNumber>41191</StateNumber>
       <AccessMethodId>2</AccessMethodId>
       <OwnerName>gen_user</OwnerName>
     </table>
     <table id="296" parent="269" name="auth_user">
       <ObjectId>22768</ObjectId>
-      <StateNumber>41031</StateNumber>
+      <StateNumber>41191</StateNumber>
       <AccessMethodId>2</AccessMethodId>
       <OwnerName>gen_user</OwnerName>
     </table>
     <table id="297" parent="269" name="auth_user_groups">
       <ObjectId>22776</ObjectId>
-      <StateNumber>41031</StateNumber>
+      <StateNumber>41191</StateNumber>
       <AccessMethodId>2</AccessMethodId>
       <OwnerName>gen_user</OwnerName>
     </table>
     <table id="298" parent="269" name="auth_user_user_permissions">
       <ObjectId>22782</ObjectId>
-      <StateNumber>41031</StateNumber>
+      <StateNumber>41191</StateNumber>
       <AccessMethodId>2</AccessMethodId>
       <OwnerName>gen_user</OwnerName>
     </table>
     <table id="299" parent="269" name="django_admin_log">
       <ObjectId>22840</ObjectId>
-      <StateNumber>41031</StateNumber>
+      <StateNumber>41191</StateNumber>
       <AccessMethodId>2</AccessMethodId>
       <OwnerName>gen_user</OwnerName>
     </table>
     <table id="300" parent="269" name="django_content_type">
       <ObjectId>22740</ObjectId>
-      <StateNumber>41031</StateNumber>
+      <StateNumber>41191</StateNumber>
       <AccessMethodId>2</AccessMethodId>
       <OwnerName>gen_user</OwnerName>
     </table>
     <table id="301" parent="269" name="django_migrations">
       <ObjectId>22732</ObjectId>
-      <StateNumber>41031</StateNumber>
+      <StateNumber>41191</StateNumber>
       <AccessMethodId>2</AccessMethodId>
       <OwnerName>gen_user</OwnerName>
     </table>
     <table id="302" parent="269" name="django_session">
       <ObjectId>22868</ObjectId>
-      <StateNumber>41031</StateNumber>
+      <StateNumber>41191</StateNumber>
       <AccessMethodId>2</AccessMethodId>
       <OwnerName>gen_user</OwnerName>
     </table>
     <table id="303" parent="269" name="tables_admin">
       <ObjectId>23173</ObjectId>
-      <StateNumber>41031</StateNumber>
+      <StateNumber>41191</StateNumber>
       <AccessMethodId>2</AccessMethodId>
       <OwnerName>gen_user</OwnerName>
     </table>
     <table id="304" parent="269" name="tables_cell">
       <ObjectId>22900</ObjectId>
-      <StateNumber>41031</StateNumber>
+      <StateNumber>41191</StateNumber>
       <AccessMethodId>2</AccessMethodId>
       <OwnerName>gen_user</OwnerName>
     </table>
     <table id="305" parent="269" name="tables_column">
       <ObjectId>22893</ObjectId>
-      <StateNumber>41031</StateNumber>
+      <StateNumber>41191</StateNumber>
       <AccessMethodId>2</AccessMethodId>
       <OwnerName>gen_user</OwnerName>
     </table>
     <table id="306" parent="269" name="tables_department">
       <ObjectId>23029</ObjectId>
-      <StateNumber>41031</StateNumber>
+      <StateNumber>41191</StateNumber>
       <AccessMethodId>2</AccessMethodId>
       <OwnerName>gen_user</OwnerName>
     </table>
     <table id="307" parent="269" name="tables_employee">
       <ObjectId>22996</ObjectId>
-      <StateNumber>41031</StateNumber>
+      <StateNumber>41191</StateNumber>
       <AccessMethodId>2</AccessMethodId>
       <OwnerName>gen_user</OwnerName>
     </table>
     <table id="308" parent="269" name="tables_filial">
       <ObjectId>22988</ObjectId>
-      <StateNumber>41031</StateNumber>
+      <StateNumber>41191</StateNumber>
       <AccessMethodId>2</AccessMethodId>
       <OwnerName>gen_user</OwnerName>
     </table>
     <table id="309" parent="269" name="tables_profile">
       <ObjectId>23004</ObjectId>
-      <StateNumber>41031</StateNumber>
+      <StateNumber>41191</StateNumber>
       <AccessMethodId>2</AccessMethodId>
       <OwnerName>gen_user</OwnerName>
     </table>
     <table id="310" parent="269" name="tables_row">
       <ObjectId>22886</ObjectId>
-      <StateNumber>41031</StateNumber>
+      <StateNumber>41191</StateNumber>
       <AccessMethodId>2</AccessMethodId>
       <OwnerName>gen_user</OwnerName>
     </table>
     <table id="311" parent="269" name="tables_rowfilialpermission">
       <ObjectId>23048</ObjectId>
-      <StateNumber>41031</StateNumber>
+      <StateNumber>41191</StateNumber>
       <AccessMethodId>2</AccessMethodId>
       <OwnerName>gen_user</OwnerName>
     </table>
     <table id="312" parent="269" name="tables_rowlock">
       <ObjectId>23068</ObjectId>
-      <StateNumber>41031</StateNumber>
+      <StateNumber>41191</StateNumber>
       <AccessMethodId>2</AccessMethodId>
       <OwnerName>gen_user</OwnerName>
     </table>
     <table id="313" parent="269" name="tables_rowpermission">
       <ObjectId>22908</ObjectId>
-      <StateNumber>41031</StateNumber>
+      <StateNumber>41191</StateNumber>
       <AccessMethodId>2</AccessMethodId>
       <OwnerName>gen_user</OwnerName>
     </table>
     <table id="314" parent="269" name="tables_table">
       <ObjectId>22878</ObjectId>
-      <StateNumber>41031</StateNumber>
+      <StateNumber>41191</StateNumber>
       <AccessMethodId>2</AccessMethodId>
       <OwnerName>gen_user</OwnerName>
     </table>
     <table id="315" parent="269" name="tables_tablefiliallock">
       <ObjectId>23127</ObjectId>
-      <StateNumber>41031</StateNumber>
+      <StateNumber>41191</StateNumber>
       <AccessMethodId>2</AccessMethodId>
       <OwnerName>gen_user</OwnerName>
     </table>
     <table id="316" parent="269" name="tables_tablefilialpermission">
       <ObjectId>23107</ObjectId>
-      <StateNumber>41031</StateNumber>
+      <StateNumber>41191</StateNumber>
       <AccessMethodId>2</AccessMethodId>
       <OwnerName>gen_user</OwnerName>
     </table>
     <table id="317" parent="269" name="tables_tablepermission">
       <ObjectId>23087</ObjectId>
-      <StateNumber>41031</StateNumber>
+      <StateNumber>41191</StateNumber>
       <AccessMethodId>2</AccessMethodId>
       <OwnerName>gen_user</OwnerName>
     </table>
