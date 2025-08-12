@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from tables.models import Filial, Department, Employee, Profile, Admin, Table, Cell, Column, Row, RowPermission, \
-    TablePermission, TableFilialPermission
+    TablePermission, TableFilialPermission, RowFilialPermission
 from .serializers import (
     UserSerializer,
     FilialSerializer,
@@ -16,7 +16,7 @@ from .serializers import (
     AdminSerializer,
     ProfileCreateUpdateSerializer,
     TableListSerializer, TableDetailSerializer, CellSerializer, ColumnSerializer, RowSerializer,
-    RowPermissionSerializer, TablePermissionsSerializer, TableFilialPermissionsSerializer
+    RowPermissionSerializer, TablePermissionsSerializer, TableFilialPermissionsSerializer, RowFilialPermissionSerializer
 )
 from .utils import send_table_update
 
@@ -145,4 +145,19 @@ class TableFilialPermissionViewSet(viewsets.ModelViewSet):
 class RowPermissionViewSet(viewsets.ModelViewSet):
     serializer_class = RowPermissionSerializer
     queryset = RowPermission.objects.all()
+
+class RowFilialPermissionViewSet(viewsets.ModelViewSet):
+    serializer_class = RowFilialPermissionSerializer
+    queryset = RowFilialPermission.objects.all()
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        filial_id = self.request.query_params.get('filial_id')
+        row_id = self.request.query_params.get('row_id')
+        if filial_id:
+            queryset = queryset.filter(filial__id=filial_id)
+        if row_id:
+            queryset = queryset.filter(row__id=row_id)
+
+        return queryset
 
