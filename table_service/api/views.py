@@ -127,6 +127,13 @@ class ColumnViewSet(viewsets.ModelViewSet):
     queryset = Column.objects.all()
     serializer_class = ColumnSerializer
 
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        table_id = self.request.query_params.get('table_id')
+        if table_id:
+            queryset = queryset.filter(table_id=table_id)
+        return queryset
+
 class RowDetailViewSet(viewsets.ModelViewSet):
     serializer_class = RowSerializer
     queryset = Row.objects.all()
