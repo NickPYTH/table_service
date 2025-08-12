@@ -90,6 +90,21 @@ class CurrentUserView(APIView):
 class TableListViewSet(viewsets.ModelViewSet):
     queryset = Table.objects.all()
     serializer_class = TableListSerializer
+    # ПОПРОБОВАТЬ ЗАСУНУТЬ ОПРЕДЕЛНИЕ В СТАНДАРТНЫЕ ОГРАНИЧЕНИЯ Permissions
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        user = self.request.user
+        permissions_user = set(TablePermission.objects.filter(user=user).values_list('table__id', flat=True))
+        filial_id = (Profile.objects
+                    .filter(user=user)
+                    .select_related('employee')
+                    .values_list('employee__id_filial', flat=True)
+                    .first())
+        permissions_filial = set(TableFilialPermission.objects.filter(filial__id=filial_id).values_list('table__id', flat=True))
+        all_permissions = permissions_user | permissions_filial
+        if all_permissions:
+            queryset = queryset.filter(id__in=all_permissions)
+        return queryset
 
 class TableDetailViewSet(viewsets.ModelViewSet):
     serializer_class = TableDetailSerializer
@@ -123,11 +138,12 @@ class RowDetailViewSet(viewsets.ModelViewSet):
 class RowListViewSet(viewsets.ModelViewSet):
     serializer_class = RowSerializer
     queryset = Row.objects.all()
-    @action(detail=False, methods=['GET'], url_path='table/(?P<table_id>\d+)')
-    def by_table(self, request, table_id=None):
-        queryset = Row.objects.filter(table_id=table_id)
-        serializer = RowSerializer(queryset, many=True)
-        return Response(serializer.data)
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        table_id = self.request.query_params.get('table_id')
+        if table_id:
+            queryset = queryset.filter(table_id=table_id)
+        return queryset
 
 
 
