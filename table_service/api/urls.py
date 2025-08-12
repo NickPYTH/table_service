@@ -21,11 +21,13 @@ router.register(r'row', views.RowDetailViewSet, basename='row')
 
 router.register(r'rows', views.RowListViewSet, basename='rows')
 
-router.register('tablepermissions', views.TablePermissionViewSet, basename='tablepermissions')
+router.register(r'tablepermissions', views.TablePermissionViewSet, basename='tablepermissions')
 
-router.register('tbfilialpermissions', views.TableFilialPermissionViewSet, basename='tbfilialpermissions')
+router.register(r'tbfilialpermissions', views.TableFilialPermissionViewSet, basename='tbfilialpermissions')
 
-router.register('rowpermissions', views.RowPermissionViewSet, basename='row-permissions')
+router.register(r'rowpermissions', views.RowPermissionViewSet, basename='row-permissions')
+
+router.register(r'rowfilialpermissions', views.RowFilialPermissionViewSet, basename='rowfilialpermissions')
 
 urlpatterns = [
     path('', include(router.urls)),

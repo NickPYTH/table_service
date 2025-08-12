@@ -5,13 +5,27 @@ from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 
 from tables.models import Filial, Employee, Department, Profile, Admin, Table, Column, Cell, Row, RowPermission, \
-    TablePermission, TableFilialPermission
+    TablePermission, TableFilialPermission, RowFilialPermission
+from datetime import datetime
 
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+
+def notify_table_update():
+    channel_layer = get_channel_layer()
+    async_to_sync(channel_layer.group_send)(
+        "table_updates",
+        {
+            "type": "table.updated",
+            "message": "Table data updated",
+        }
+    )
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'first_name', 'last_name']
+
 
 
 class FilialSerializer(serializers.ModelSerializer):
@@ -70,6 +84,7 @@ class AdminSerializer(serializers.ModelSerializer):
         }
 
 
+
 class ProfileCreateUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
@@ -82,6 +97,7 @@ class ColumnSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'order', 'data_type', "table"]
 
     def create(self, validated_data):
+        notify_table_update()
         table = validated_data['table']
         columns = Column.objects.filter(table=table)
         column = super().create(validated_data)
@@ -92,6 +108,7 @@ class ColumnSerializer(serializers.ModelSerializer):
         cells = [Cell(row=row, column=column) for row in rows]
         Cell.objects.bulk_create(cells)
         return column
+
 
 
 class RowSerializer(serializers.ModelSerializer):
@@ -167,6 +184,8 @@ class CellSerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
 
+
+
 class TableDetailSerializer(serializers.ModelSerializer):
     owner = UserSerializer(read_only=True)
     created_at = serializers.SerializerMethodField()
@@ -232,6 +251,7 @@ class TableListSerializer(serializers.ModelSerializer):
         created_at = datetime.now()
         title = validated_data.pop('title')
         table = Table.objects.create(owner=owner, title=title, created_at=created_at)
+        notify_table_update()
         return table
 
 
@@ -262,6 +282,8 @@ class TableFilialPermissionsSerializer(serializers.ModelSerializer):
             return permissions
 
 
+
+
 class RowPermissionSerializer(serializers.ModelSerializer):
     user_id = serializers.IntegerField()
     row_id = serializers.IntegerField()
@@ -275,5 +297,22 @@ class RowPermissionSerializer(serializers.ModelSerializer):
         if user and row:
             permissions = RowPermission.objects.create(row=row, user=user, **validated_data)
             return permissions
+
+
+class RowFilialPermissionSerializer(serializers.ModelSerializer):
+    filial_id = serializers.IntegerField()
+    row_id = serializers.IntegerField()
+    class Meta:
+        model = RowFilialPermission
+        fields = ['filial_id','can_edit','can_delete','row_id']
+
+
+    def create(self, validated_data):
+        row = get_object_or_404(Row, id=validated_data['row_id'])
+        filial = get_object_or_404(Filial,id=validated_data['filial_id'])
+        if filial and row:
+            permissions = RowFilialPermission.objects.create(filial=filial, row=row, **validated_data)
+            return permissions
+
 
 
