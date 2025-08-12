@@ -2,7 +2,7 @@ from django.contrib.auth.models import User
 from django.http import JsonResponse
 from rest_framework import viewsets, permissions, generics
 from rest_framework.views import APIView
-from .helper import get_table_ids_permissions
+from .helper import get_table_ids_permissions, get_row_ids_permissions
 from tables.models import Filial, Department, Employee, Profile, Admin, Table, Cell, Column, Row, RowPermission, \
     TablePermission, TableFilialPermission, RowFilialPermission
 from .serializers import (
@@ -41,7 +41,6 @@ class EmployeeViewSet(viewsets.ModelViewSet):
     queryset = Employee.objects.all()
     serializer_class = EmployeeSerializer
     # permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-
     def get_queryset(self):
         queryset = super().get_queryset()
         filial_id = self.request.query_params.get('filial_id')
@@ -52,8 +51,7 @@ class EmployeeViewSet(viewsets.ModelViewSet):
 
 class ProfileViewSet(viewsets.ModelViewSet):
     queryset = Profile.objects.all()
-    permission_classes = [permissions.IsAuthenticated]
-
+    # permission_classes = [permissions.IsAuthenticated]
     def get_serializer_class(self):
         if self.action in ['create', 'update', 'partial_update']:
             return ProfileCreateUpdateSerializer
@@ -74,16 +72,14 @@ class AdminViewSet(viewsets.ModelViewSet):
 class CurrentUserView(generics.RetrieveAPIView):
     serializer_class = UserSerializer
     # permission_classes = [permissions.IsAuthenticated]
-
     def get_object(self):
         return self.request.user
 
-class CurrentUserView(APIView):
-    # permission_classes = (IsAuthenticated,)
-
-    def get(self, request):
-        print(request)
-        return JsonResponse({'user': 'kek'})
+# class CurrentUserView(APIView):
+#     # permission_classes = (IsAuthenticated,)
+#     def get(self, request):
+#         print(request)
+#         return JsonResponse({'user': 'kek'})
 
 class TableListViewSet(viewsets.ModelViewSet):
     queryset = Table.objects.all()
@@ -95,6 +91,8 @@ class TableListViewSet(viewsets.ModelViewSet):
         all_permissions = get_table_ids_permissions(user)
         if all_permissions:
             queryset = queryset.filter(id__in=all_permissions)
+        else:
+            queryset = queryset.none()
         return queryset
 
 class TableDetailViewSet(viewsets.ModelViewSet):
@@ -111,6 +109,8 @@ class TableDetailViewSet(viewsets.ModelViewSet):
         all_permissions = get_table_ids_permissions(user)
         if all_permissions:
             queryset = queryset.filter(id__in=all_permissions)
+        else:
+            queryset = queryset.none()
         return queryset
 
     def perform_update(self, serializer):
@@ -129,17 +129,32 @@ class ColumnViewSet(viewsets.ModelViewSet):
 
 class RowDetailViewSet(viewsets.ModelViewSet):
     serializer_class = RowSerializer
+    queryset = Row.objects.all()
     def get_queryset(self):
+        queryset = super().get_queryset()
         row_id = self.kwargs.get('pk')
-        return Row.objects.filter(id=row_id)
+        queryset = queryset.filter(id=row_id)
+        user = self.request.user
+        all_permissions = get_row_ids_permissions(user)
+        if all_permissions:
+            queryset = queryset.filter(id__in=all_permissions)
+        else:
+            queryset = queryset.none()
+        return queryset
 
 class RowListViewSet(viewsets.ModelViewSet):
     serializer_class = RowSerializer
     queryset = Row.objects.all()
     def get_queryset(self):
         queryset = super().get_queryset()
+        user = self.request.user
+        all_permissions = get_row_ids_permissions(user)
+        if all_permissions:
+            queryset = queryset.filter(id__in=all_permissions)
+        else:
+            queryset = queryset.none()
         table_id = self.request.query_params.get('table_id')
-        if table_id:
+        if table_id and queryset:
             queryset = queryset.filter(table_id=table_id)
         return queryset
 
