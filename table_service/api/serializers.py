@@ -125,6 +125,7 @@ class RowSerializer(serializers.ModelSerializer):
         owner = self.context['request'].user
         order = Row.objects.count()
         row = Row.objects.create(table=table, created_by=owner, order=order)
+        RowPermission.objects.create(user=owner, row=row)
         columns = table.columns.all()
         cells = [Cell(row=row,column=column) for column in columns]
         Cell.objects.bulk_create(cells)
@@ -212,6 +213,7 @@ class TableDetailSerializer(serializers.ModelSerializer):
         created_at = datetime.now()
         title = validated_data.pop('title')
         table = Table.objects.create(owner=owner, title=title, created_at=created_at)
+        TablePermission.objects.create(table=table, user=owner)
         return table
 
 
