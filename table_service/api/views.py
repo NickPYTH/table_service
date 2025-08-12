@@ -104,7 +104,7 @@ class TableDetailViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = super().get_queryset()
         table_id = self.kwargs.get('pk')
-        queryset = queryset.filter(table_id=table_id)
+        queryset = queryset.filter(id=table_id)
         user = self.request.user
         all_permissions = get_table_ids_permissions(user)
         if all_permissions:
