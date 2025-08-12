@@ -18,7 +18,7 @@ from .serializers import (
     TableListSerializer, TableDetailSerializer, CellSerializer, ColumnSerializer, RowSerializer,
     RowPermissionSerializer, TablePermissionsSerializer, TableFilialPermissionsSerializer
 )
-from .utils import send_table_update
+from .utils import send_table_update, send_cell_update
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -109,6 +109,11 @@ class TableDetailViewSet(viewsets.ModelViewSet):
 class CellViewSet(viewsets.ModelViewSet):
     queryset = Cell.objects.all()
     serializer_class = CellSerializer
+
+    def perform_update(self, serializer):
+        instance = serializer.save()
+        send_cell_update(instance)
+        return instance
 
 class ColumnViewSet(viewsets.ModelViewSet):
     queryset = Column.objects.all()

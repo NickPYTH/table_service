@@ -14,11 +14,12 @@ import django
 django.setup()  # Явная настройка Django
 
 # Теперь безопасно импортируем consumers
-from api.consumers import TableUpdatesConsumer
+from api.consumers import TableUpdatesConsumer, CellUpdatesConsumer
 
 application = ProtocolTypeRouter({
     "http": django_application,
     "websocket": URLRouter([
         path("ws/table-updates/", TableUpdatesConsumer.as_asgi()),
+        path("ws/cell-updates/", CellUpdatesConsumer.as_asgi()),
     ]),
 })

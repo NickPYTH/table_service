@@ -4,17 +4,18 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="cbc612b9-a52e-45c3-8bf8-69a4a5aece77" name="Changes" comment="Создано приложение api&#10;Обновлены настройки подключения к БД">
-      <change afterPath="$PROJECT_DIR$/table_service/api/backends.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/table_service/api/middleware.py" afterDir="false" />
+    <list default="true" id="cbc612b9-a52e-45c3-8bf8-69a4a5aece77" name="Changes" comment="Передаются данные об измененной сущность таблицы">
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources.local.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dataSources.local.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dataSources.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/dataSources/b4e9259d-1287-4244-8643-2f63c7c13c11.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dataSources/b4e9259d-1287-4244-8643-2f63c7c13c11.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/dataSources/b4e9259d-1287-4244-8643-2f63c7c13c11/storage_v2/_src_/database/default_db.PGdzKA/schema/public.abK9xQ.meta" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dataSources/b4e9259d-1287-4244-8643-2f63c7c13c11/storage_v2/_src_/database/default_db.PGdzKA/schema/public.abK9xQ.meta" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/dataSources/b4e9259d-1287-4244-8643-2f63c7c13c11/storage_v2/_src_/database/default_db.PGdzKA/schema/table_service.RPsJjg.meta" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dataSources/b4e9259d-1287-4244-8643-2f63c7c13c11/storage_v2/_src_/database/default_db.PGdzKA/schema/table_service.RPsJjg.meta" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/table_service/.env" beforeDir="false" afterPath="$PROJECT_DIR$/table_service/.env" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/api/consumers.py" beforeDir="false" afterPath="$PROJECT_DIR$/table_service/api/consumers.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/api/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/table_service/api/utils.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/table_service/api/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/table_service/api/views.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/table_service/table_service/settings.py" beforeDir="false" afterPath="$PROJECT_DIR$/table_service/table_service/settings.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/table_service/tables/urls.py" beforeDir="false" afterPath="$PROJECT_DIR$/table_service/tables/urls.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/table_service/asgi.py" beforeDir="false" afterPath="$PROJECT_DIR$/table_service/table_service/asgi.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/table_service/routing.py" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -57,38 +58,43 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ASKED_SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "Django Server.table_service.executor": "Run",
-    "Docker.docker-compose.yml: Compose Deployment.executor": "Run",
-    "RunOnceActivity.OpenDjangoStructureViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "RunOnceActivity.pycharm.django.structure.promotion.once.per.project": "true",
-    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "git-widget-placeholder": "master",
-    "last_opened_file_path": "/Users/nick/PycharmProjects/table_service",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ASKED_SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;Django Server.table_service.executor&quot;: &quot;Debug&quot;,
+    &quot;Docker.docker-compose.yml.db: Compose Deployment.executor&quot;: &quot;Run&quot;,
+    &quot;Docker.docker-compose.yml: Compose Deployment.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.OpenDjangoStructureViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.pycharm.django.structure.promotion.once.per.project&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;database.data.extractors.current.export.id&quot;: &quot;Comma-separated (CSV)_id&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;snv&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/Users/nick/PycharmProjects/table_service&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   },
-  "keyToStringList": {
-    "DatabaseDriversLRU": [
-      "postgresql"
+  &quot;keyToStringList&quot;: {
+    &quot;DatabaseDriversLRU&quot;: [
+      &quot;postgresql&quot;
     ]
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$" />
     </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/table_service/table_service" />
+    </key>
   </component>
-  <component name="RunManager">
+  <component name="RunManager" selected="Django Server.table_service">
     <configuration name="table_service" type="Python.DjangoServer" factoryName="Django server">
       <module name="table_service" />
       <option name="ENV_FILES" value="" />
@@ -121,6 +127,25 @@
       </deployment>
       <method v="2" />
     </configuration>
+    <configuration name="docker-compose.yml.db: Compose Deployment" type="docker-deploy" factoryName="docker-compose.yml" temporary="true" server-name="Docker">
+      <deployment type="docker-compose.yml">
+        <settings>
+          <option name="envFilePath" value="" />
+          <option name="services">
+            <list>
+              <option value="db" />
+            </list>
+          </option>
+          <option name="sourceFilePath" value="docker-compose.yml" />
+        </settings>
+      </deployment>
+      <method v="2" />
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Docker.docker-compose.yml.db: Compose Deployment" />
+      </list>
+    </recent_temporary>
   </component>
   <component name="SharedIndexes">
     <attachedChunks>
@@ -142,6 +167,10 @@
       <workItem from="1754542581363" duration="4248000" />
       <workItem from="1754550054894" duration="465000" />
       <workItem from="1754552918635" duration="2289000" />
+      <workItem from="1754730594811" duration="1321000" />
+      <workItem from="1754759137852" duration="7329000" />
+      <workItem from="1754810659444" duration="35261000" />
+      <workItem from="1754995855504" duration="60000" />
     </task>
     <task id="LOCAL-00001" summary="Создано приложение api&#10;Обновлены настройки подключения к БД">
       <option name="closed" value="true" />
@@ -151,7 +180,39 @@
       <option name="project" value="LOCAL" />
       <updated>1754545444511</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="cors">
+      <option name="closed" value="true" />
+      <created>1754569166223</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1754569166223</updated>
+    </task>
+    <task id="LOCAL-00003" summary="Добавлена библиотека и настройка для работы с веб-сокетами">
+      <option name="closed" value="true" />
+      <created>1754967409032</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1754967409032</updated>
+    </task>
+    <task id="LOCAL-00004" summary="Добавлено уведомление пользователя об изменении сущности Table через WS">
+      <option name="closed" value="true" />
+      <created>1754974224101</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1754974224101</updated>
+    </task>
+    <task id="LOCAL-00005" summary="Передаются данные об измененной сущность таблицы">
+      <option name="closed" value="true" />
+      <created>1754975719412</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1754975719412</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -160,8 +221,23 @@
   <component name="UnknownFeatures">
     <option featureType="com.intellij.fileTypeFactory" implementationName=".env" />
   </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Создано приложение api&#10;Обновлены настройки подключения к БД" />
-    <option name="LAST_COMMIT_MESSAGE" value="Создано приложение api&#10;Обновлены настройки подключения к БД" />
+    <MESSAGE value="cors" />
+    <MESSAGE value="Добавлена библиотека и настройка для работы с веб-сокетами" />
+    <MESSAGE value="Добавлено уведомление пользователя об изменении сущности Table через WS" />
+    <MESSAGE value="Передаются данные об измененной сущность таблицы" />
+    <option name="LAST_COMMIT_MESSAGE" value="Передаются данные об измененной сущность таблицы" />
   </component>
 </project>
