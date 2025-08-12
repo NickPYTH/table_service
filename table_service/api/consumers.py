@@ -1,5 +1,7 @@
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 
+from api.serializers import TableDetailSerializer
+
 
 class TableUpdatesConsumer(AsyncJsonWebsocketConsumer):
     async def connect(self):
@@ -12,5 +14,6 @@ class TableUpdatesConsumer(AsyncJsonWebsocketConsumer):
     async def table_updated(self, event):
         await self.send_json({
             "type": "table_update",
-            "data": event["data"]
+            "id": event["data"]["id"],
+            "entity": event["data"]["entity"],
         })
