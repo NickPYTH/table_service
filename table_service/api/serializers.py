@@ -208,15 +208,6 @@ class TableDetailSerializer(serializers.ModelSerializer):
         table.save()
         return table
 
-    def create(self, validated_data):
-        owner = self.context['request'].user
-        created_at = datetime.now()
-        title = validated_data.pop('title')
-        table = Table.objects.create(owner=owner, title=title, created_at=created_at)
-        TablePermission.objects.create(table=table, user=owner)
-        return table
-
-
 
     def get_created_at(self, obj):
         return int(obj.created_at.timestamp()) * 1000
@@ -253,6 +244,7 @@ class TableListSerializer(serializers.ModelSerializer):
         created_at = datetime.now()
         title = validated_data.pop('title')
         table = Table.objects.create(owner=owner, title=title, created_at=created_at)
+        TablePermission.objects.create(table=table, user=owner)
         notify_table_update()
         return table
 
