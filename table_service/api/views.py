@@ -1,10 +1,16 @@
+import os
+from io import BytesIO
+
 from django.contrib.auth.models import User
-from django.http import JsonResponse
-from rest_framework import viewsets, permissions, generics
-from rest_framework.views import APIView
-from .helper import get_table_ids_permissions, get_row_ids_permissions
+from markdown.extensions.extra import extensions
+from rest_framework import viewsets, generics, status
+from rest_framework.decorators import action
+from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.renderers import JSONRenderer
+from rest_framework.response import Response
 from tables.models import Filial, Department, Employee, Profile, Admin, Table, Cell, Column, Row, RowPermission, \
     TablePermission, TableFilialPermission, RowFilialPermission
+from .helper import get_table_ids_permissions, get_row_ids_permissions, FileUploadBrowsableRenderer, import_table
 from .serializers import (
     UserSerializer,
     FilialSerializer,
@@ -14,7 +20,8 @@ from .serializers import (
     AdminSerializer,
     ProfileCreateUpdateSerializer,
     TableListSerializer, TableDetailSerializer, CellSerializer, ColumnSerializer, RowSerializer,
-    RowPermissionSerializer, TablePermissionsSerializer, TableFilialPermissionsSerializer, RowFilialPermissionSerializer
+    RowPermissionSerializer, TablePermissionsSerializer, TableFilialPermissionsSerializer,
+    RowFilialPermissionSerializer
 )
 from .utils import send_table_update, send_cell_update
 
@@ -232,4 +239,43 @@ class RowFilialPermissionViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(row__id=row_id)
 
         return queryset
+
+
+class FileUploadViewSet(viewsets.ViewSet):
+    parser_classes = (MultiPartParser, FormParser)
+    renderer_classes = [JSONRenderer, FileUploadBrowsableRenderer]
+    # parser_classes = [MultiPartParser]
+    # @action(detail=False,methods=['post'])
+    # def upload(self, request, *args, **kwargs):
+    #     serializer = FileUploadSerializer(data=request.data)
+    #     if serializer.is_valid():
+    #         upload = serializer.validated_data['file']
+    #         return Response(
+    #             {"status": "success", "message": "File Uploaded"},
+    #             status=status.HTTP_200_OK
+    #         )
+    #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    @action(detail=False, methods=['post'])
+    def upload(self, request):
+        if 'file' not in request.FILES:
+            return Response(
+                {"error": "No file provided"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        user = self.request.user
+        file = request.FILES['file']
+        name = request.data.get('table_name')
+        filename = file.name
+        extensions = os.path.splitext(filename)[1].lower()
+        if extensions != '.xlsx':
+            return Response(
+                {"error": "Файл должен быть в формате XLSX"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        file_data = BytesIO(file.read())
+        import_table(file_data, name, user)
+        return Response({
+            "filename": file.name,
+            "size": file.size,
+        })
 

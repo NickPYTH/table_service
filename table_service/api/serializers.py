@@ -252,9 +252,10 @@ class TableListSerializer(serializers.ModelSerializer):
 class TablePermissionsSerializer(serializers.ModelSerializer):
     # В модельке сделать уникальный ключ по двум полям, может быть задвоение
     user_id = serializers.IntegerField()
+    user = UserSerializer(read_only=True)
     class Meta:
         model = TablePermission
-        fields = ['id','user_id','can_view','table']
+        fields = ['id','user_id','can_view','table', 'user']
 
     def create(self, validated_data):
         user = get_object_or_404(User,id=validated_data['user_id'])
@@ -307,6 +308,19 @@ class RowFilialPermissionSerializer(serializers.ModelSerializer):
         if filial and row:
             permissions = RowFilialPermission.objects.create(filial=filial, row=row, **validated_data)
             return permissions
+
+
+class FileUploadSerializer(serializers.ModelSerializer):
+    file = serializers.FileField(
+        max_length=1024,
+        allow_empty_file=False,
+        help_text='KEK'
+    )
+    name = serializers.CharField()
+    # class Meta:
+    #     fields = ['name','file']
+    #     # model = File
+    #     serializers.raise_errors_on_nested_writes = False
 
 
 
