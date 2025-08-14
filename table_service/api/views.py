@@ -244,17 +244,6 @@ class RowFilialPermissionViewSet(viewsets.ModelViewSet):
 class FileUploadViewSet(viewsets.ViewSet):
     parser_classes = (MultiPartParser, FormParser)
     renderer_classes = [JSONRenderer, FileUploadBrowsableRenderer]
-    # parser_classes = [MultiPartParser]
-    # @action(detail=False,methods=['post'])
-    # def upload(self, request, *args, **kwargs):
-    #     serializer = FileUploadSerializer(data=request.data)
-    #     if serializer.is_valid():
-    #         upload = serializer.validated_data['file']
-    #         return Response(
-    #             {"status": "success", "message": "File Uploaded"},
-    #             status=status.HTTP_200_OK
-    #         )
-    #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     @action(detail=False, methods=['post'])
     def upload(self, request):
         if 'file' not in request.FILES:

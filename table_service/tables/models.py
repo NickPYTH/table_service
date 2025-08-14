@@ -59,7 +59,7 @@ class Profile(models.Model):
 class Table(models.Model):
     title = models.CharField(max_length=200)
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
-    created_at = models.DateTimeField()
+    created_at = models.DateTimeField(default=datetime.datetime.now())
     share_token = models.CharField(max_length=32, unique=True, blank=True)
 
     def save(self, *args, **kwargs):
