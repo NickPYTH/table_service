@@ -1,5 +1,5 @@
-from datetime import datetime
-
+from datetime import date
+from django.db import transaction
 from django.utils.safestring import mark_safe
 
 from tables.models import TablePermission, TableFilialPermission, Profile, RowPermission, RowFilialPermission, Table, \
@@ -44,7 +44,7 @@ class FileUploadBrowsableRenderer(BrowsableAPIRenderer):
                         <label for="file">Выберите файл:</label>
                         <input type="file" id="file" name="file" required>
                     </div>
-                    <input type='text' id='table_name' required/>
+                    <input type='text' id='table_name' name="table_name" required/>
                     <button type="submit" class="btn btn-primary">Загрузить</button>
                 </form>
             </div>
@@ -64,32 +64,31 @@ def determine_column_types(rows_sample):
     if not rows_sample:
         return []
 
-    sample_size = min(10, len(rows_sample))
+    # sample_size = min(10, len(rows_sample))
     column_types = []
-    # #
-    # for col_idx in range(len(rows_sample[0])):
-    #     values = [row[col_idx] for row in rows_sample[:sample_size] if row[col_idx] is not None]
-    # #
-    #     if not values:
-    #         column_types.append(Column.ColumnType.TEXT)
-    #         continue
-    # #
-    # #     # Проверяем типы данных
-    #     if all(isinstance(v, bool) for v in values):
-    #         col_type = Column.ColumnType.BOOLEAN
-    #     elif all(isinstance(v, int) and not any(isinstance(v, bool) for v in values):
-    #         col_type = Column.ColumnType.INTEGER
-    #     elif all(isinstance(v, (int, float)) and not any(isinstance(v, bool) for v in values):
-    #         col_type = Column.ColumnType.FLOAT
-    #     elif all(isinstance(v, datetime.date) for v in values if isinstance(v, datetime.date)):
-    #         col_type = Column.ColumnType.DATE
-    #     else:
-    #         col_type = Column.ColumnType.TEXT
-    #
-    #     column_types.append(col_type)
+
+    for col_idx in range(len(rows_sample[0])):
+        # values = [row[col_idx] for row in rows_sample[:sample_size] if row[col_idx] is not None]
+        col_type = Column.ColumnType.TEXT
+        # if not values:
+        #     column_types.append(Column.ColumnType.TEXT)
+        #     continue
+        #
+        # # Проверяем типы данных
+        # if all(isinstance(v, bool) for v in values):
+        #     col_type = Column.ColumnType.BOOLEAN
+        # elif all(isinstance(v, int) for v in values) and not any(isinstance(v, bool) for v in values):
+        #     col_type = Column.ColumnType.INTEGER
+        # elif all(isinstance(v, (int, float)) for v in values) and not any(isinstance(v, bool) for v in values):
+        #     col_type = Column.ColumnType.FLOAT
+        # elif all(isinstance(v, date) for v in values):
+        #     col_type = Column.ColumnType.DATE
+        # else:
+        #     col_type = Column.ColumnType.TEXT
+
+        column_types.append(col_type)
 
     return column_types
-
 
 def prepare_cell(row, column, value):
     """Создает объект Cell с правильным полем в зависимости от типа колонки"""
@@ -107,64 +106,72 @@ def prepare_cell(row, column, value):
     elif column.data_type == Column.ColumnType.BOOLEAN:
         cell.boolean_value = bool(value)
     elif column.data_type == Column.ColumnType.DATE:
-        cell.date_value = value if isinstance(value, datetime.date) else None
+        cell.date_value = value if isinstance(value, date) else None
 
     return cell
 
 
-
-
 def import_table(file, name, user):
-    wb = openpyxl.load_workbook(file)
-    ws = wb.active
-    table = Table.objects.create(name=name, user=user)
+    try:
+        with transaction.atomic():  # Всё выполняется в одной транзакции
+            wb = openpyxl.load_workbook(file, data_only=True)
+            ws = wb.active
 
-    rows_data = list(ws.iter_rows(values_only=True))
-    if not rows_data:
-        return table
+            # Создаём таблицу
+            table = Table.objects.create(title=name, owner=user)
 
-    headers = [str(header).strip() for header in rows_data[0]]
+            # Читаем данные из Excel
+            rows_data = list(ws.iter_rows(values_only=True))
+            if not rows_data:
+                return table
 
-    columns = []
-    for order, (header, data_type) in enumerate(zip(headers, determine_column_types(rows_data[1:])), start=1):
-        column = Column(
-            table=table,
-            name=header,
-            order=order,
-            data_type=data_type
-        )
-        columns.append(column)
+            # Определяем заголовки и типы колонок
+            headers = [str(header).strip() for header in rows_data[0]]
+            column_types = determine_column_types(rows_data[1:])
 
-    Column.objects.bulk_create(columns)
+            # Создаём колонки
+            columns = []
+            for order, (header, data_type) in enumerate(zip(headers, column_types), start=1):
+                column = Column(
+                    table=table,
+                    name=header,
+                    order=order,
+                    data_type=data_type
+                )
+                columns.append(column)
 
-    # Подготавливаем данные для строк и ячеек
-    rows = []
-    cells = []
-    for row_order, row_values in enumerate(rows_data[1:], start=1):  # Пропускаем заголовки
-        row = Row(
-            table=table,
-            order=row_order,
-            created_by=user
-        )
-        rows.append(row)
+            Column.objects.bulk_create(columns)
 
-    # Массовое создание строк
-    Row.objects.bulk_create(rows)
+            # Подготавливаем строки
+            rows = []
+            for row_order, _ in enumerate(rows_data[1:], start=1):
+                row = Row(
+                    table=table,
+                    order=row_order,
+                    created_by=user
+                )
+                rows.append(row)
 
-    # Получаем созданные строки с ID
-    created_rows = list(Row.objects.filter(table=table).order_by('order'))
+            Row.objects.bulk_create(rows)
 
-    # Подготавливаем ячейки
-    for row_obj, row_values in zip(created_rows, rows_data[1:]):
-        for column, value in zip(columns, row_values):
-            cell = prepare_cell(row_obj, column, value)
-            if cell:
-                cells.append(cell)
+            # Получаем созданные строки (с актуальными ID)
+            created_rows = list(Row.objects.filter(table=table).order_by('order'))
 
-    # Массовое создание ячеек
-    Cell.objects.bulk_create(cells)
+            # Подготавливаем ячейки
+            cells = []
+            for row_obj, row_values in zip(created_rows, rows_data[1:]):
+                for column, value in zip(columns, row_values):
+                    cell = prepare_cell(row_obj, column, value)
+                    if cell:
+                        cells.append(cell)
 
-    return table
+            Cell.objects.bulk_create(cells)
+
+            return table
+
+    except Exception as e:
+        # Логируем ошибку (можно использовать logging.exception(e))
+        raise  #
 
 
 
