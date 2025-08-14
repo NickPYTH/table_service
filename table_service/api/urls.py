@@ -31,6 +31,8 @@ router.register(r'rowfilialpermissions', views.RowFilialPermissionViewSet, basen
 
 router.register(r'file',views.FileUploadViewSet, basename='file')
 
+router.register(r'rowfile',views.RowUploadViewSet, basename='rowfile')
+
 urlpatterns = [
     path('', include(router.urls)),
     path('get_current_user', views.CurrentUserView.as_view(), name='get_current_user'),

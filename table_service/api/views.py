@@ -10,7 +10,7 @@ from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from tables.models import Filial, Department, Employee, Profile, Admin, Table, Cell, Column, Row, RowPermission, \
     TablePermission, TableFilialPermission, RowFilialPermission
-from .helper import get_table_ids_permissions, get_row_ids_permissions, FileUploadBrowsableRenderer, import_table
+from .helper import get_table_ids_permissions, get_row_ids_permissions, FileUploadBrowsableRenderer, import_table, import_to_existing_table
 from .serializers import (
     UserSerializer,
     FilialSerializer,
@@ -281,4 +281,34 @@ class FileUploadViewSet(viewsets.ViewSet):
             "filename": file.name,
             "size": file.size,
         })
+
+class RowUploadViewSet(viewsets.ViewSet):
+    parser_classes = (MultiPartParser, FormParser)
+    renderer_classes = [JSONRenderer, FileUploadBrowsableRenderer]
+
+    @action(detail=False, methods=['post'])
+    def upload(self, request):
+        table_id = request.data.get('table_id')
+        if table_id:
+            if 'file' not in request.FILES:
+                return Response(
+                    {"error": "No file provided"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            user = self.request.user
+            file = request.FILES['file']
+            filename = file.name
+            extensions = os.path.splitext(filename)[1].lower()
+            if extensions != '.xlsx':
+                return Response(
+                    {"error": "Файл должен быть в формате XLSX"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            file_data = BytesIO(file.read())
+            import_to_existing_table(file_data, table_id, user)
+            return Response({
+                "filename": file.name,
+                "size": file.size,
+            })
+
 

@@ -266,9 +266,10 @@ class TablePermissionsSerializer(serializers.ModelSerializer):
 
 class TableFilialPermissionsSerializer(serializers.ModelSerializer):
     filial_id = serializers.IntegerField()
+    filial = FilialSerializer(read_only=True)
     class Meta:
         model = TableFilialPermission
-        fields = ['id','table','filial_id','can_view']
+        fields = ['id','table','filial_id','can_view','filial']
 
     def create(self, validated_data):
         filial = get_object_or_404(Filial,id=validated_data['filial_id'])
@@ -298,9 +299,10 @@ class RowPermissionSerializer(serializers.ModelSerializer):
 class RowFilialPermissionSerializer(serializers.ModelSerializer):
     filial_id = serializers.IntegerField()
     row_id = serializers.IntegerField()
+    filial = FilialSerializer(read_only=True)
     class Meta:
         model = RowFilialPermission
-        fields = ['filial_id','can_edit','can_delete','row_id']
+        fields = ['filial_id','can_edit','can_delete','row_id','filial']
 
 
     def create(self, validated_data):
