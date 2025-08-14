@@ -120,6 +120,12 @@ def import_table(file, name, user):
             # Создаём таблицу
             table = Table.objects.create(title=name, owner=user)
 
+            TablePermission.objects.create(
+                table=table,
+                user=user,
+                can_view=True,
+            )
+
             # Читаем данные из Excel
             rows_data = list(ws.iter_rows(values_only=True))
             if not rows_data:
@@ -159,12 +165,22 @@ def import_table(file, name, user):
 
             # Подготавливаем ячейки
             cells = []
+            row_permissions = []
             for row_obj, row_values in zip(created_rows, rows_data[1:]):
+                row_permissions.append(
+                    RowPermission(
+                        row = row_obj,
+                        user = user,
+                        can_edit=True,
+                        can_delete=True
+                    )
+                )
                 for column, value in zip(columns, row_values):
                     cell = prepare_cell(row_obj, column, value)
                     if cell:
                         cells.append(cell)
 
+            RowPermission.objects.bulk_create(row_permissions)
             Cell.objects.bulk_create(cells)
 
             return table
