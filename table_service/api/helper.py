@@ -1,6 +1,8 @@
 from datetime import date
 from django.db import transaction
+from django.db.models.aggregates import Max
 from django.utils.safestring import mark_safe
+from rest_framework.exceptions import PermissionDenied
 
 from tables.models import TablePermission, TableFilialPermission, Profile, RowPermission, RowFilialPermission, Table, \
     Row, Cell, Column
@@ -111,6 +113,7 @@ def prepare_cell(row, column, value):
     return cell
 
 
+
 def import_table(file, name, user):
     try:
         with transaction.atomic():  # Всё выполняется в одной транзакции
@@ -190,6 +193,71 @@ def import_table(file, name, user):
         raise  #
 
 
+def import_to_existing_table(file, table_id, user):
+    try:
+        with transaction.atomic():
+            # Получаем таблицу и проверяем права
+            table = Table.objects.get(id=table_id)
+            if not table.permissions.filter(user=user, can_view=True).exists():
+                raise PermissionDenied("У вас нет прав на редактирование этой таблицы")
 
+            wb = openpyxl.load_workbook(file, data_only=True)
+            ws = wb.active
+            rows_data = list(ws.iter_rows(values_only=True))
+
+            if not rows_data:
+                return table
+
+            # Получаем существующие колонки
+            existing_columns = list(table.columns.all().order_by('order'))
+            if len(rows_data[0]) != len(existing_columns):
+                raise ValueError("Количество колонок в файле не совпадает с таблицей")
+
+            # Определяем порядковый номер для новых строк
+            last_order = Row.objects.filter(table=table).aggregate(Max('order'))['order__max'] or 0
+
+            # Подготавливаем новые строки
+            new_rows = []
+            for row_order, row_values in enumerate(rows_data[1:], start=last_order + 1):
+                row = Row(
+                    table=table,
+                    order=row_order,
+                    created_by=user
+                )
+                new_rows.append(row)
+
+            Row.objects.bulk_create(new_rows)
+
+            # Получаем ID созданных строк
+            created_rows = list(Row.objects.filter(table=table, order__gt=last_order).order_by('order'))
+
+            # Подготавливаем ячейки и права
+            cells = []
+            row_permissions = []
+
+            for row_obj, row_values in zip(created_rows, rows_data[1:]):
+                row_permissions.append(
+                    RowPermission(
+                        row=row_obj,
+                        user=user,
+                        can_edit=True,
+                        can_delete=True
+                    )
+                )
+
+                for column, value in zip(existing_columns, row_values):
+                    cell = prepare_cell(row_obj, column, value)
+                    if cell:
+                        cells.append(cell)
+
+            # Массовое создание
+            RowPermission.objects.bulk_create(row_permissions)
+            Cell.objects.bulk_create(cells)
+
+            return table
+
+    except Exception as e:
+    # Логируем ошибку (можно использовать logging.exception(e))
+        raise  #
 
 
