@@ -122,6 +122,8 @@ class TableDetailViewSet(viewsets.ModelViewSet):
             'rows__cells',
             'rows__cells__column',
         )
+
+
     def get_queryset(self):
         queryset = super().get_queryset()
         table_id = self.kwargs.get('pk')

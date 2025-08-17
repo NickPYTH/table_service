@@ -2,11 +2,11 @@ from datetime import date
 from django.db import transaction
 from django.db.models.aggregates import Max
 from django.utils.safestring import mark_safe
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.renderers import BrowsableAPIRenderer
 
+from api.utils import send_table_create
 from tables.models import TablePermission, TableFilialPermission, Profile, RowPermission, RowFilialPermission, Table, \
     Row, Cell, Column
-from rest_framework.renderers import BrowsableAPIRenderer
 
 import openpyxl
 from io import BytesIO
@@ -35,7 +35,6 @@ def get_row_ids_permissions(user):
     all_permissions = permissions_user | permissions_filial
     return all_permissions
 
-
 class FileUploadBrowsableRenderer(BrowsableAPIRenderer):
     def get_rendered_html_form(self, data, view, method, request):
         if method == 'POST':
@@ -59,7 +58,6 @@ class FileUploadBrowsableRenderer(BrowsableAPIRenderer):
             '''
             return mark_safe(html)  # Помечаем HTML как безопасный
         return super().get_rendered_html_form(data, view, method, request)
-
 
 def determine_column_types(rows_sample):
     """Определяем тип данных для каждой колонки на основе первых 10 строк"""
@@ -253,11 +251,8 @@ def import_to_existing_table(file, table_id, user):
             # Массовое создание
             RowPermission.objects.bulk_create(row_permissions)
             Cell.objects.bulk_create(cells)
-
+            send_table_create(table)
             return table
-
     except Exception as e:
     # Логируем ошибку (можно использовать logging.exception(e))
         raise  #
-
-

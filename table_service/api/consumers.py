@@ -16,6 +16,13 @@ class TableUpdatesConsumer(AsyncJsonWebsocketConsumer):
             "entity": event["data"]["entity"],
         })
 
+    async def table_created(self, event):
+        await self.send_json({
+            "type": "table_create",
+            "id": event["data"]["id"],
+            "entity": event["data"]["entity"],
+        })
+
 
 class CellUpdatesConsumer(AsyncJsonWebsocketConsumer):
     async def connect(self):
@@ -31,3 +38,6 @@ class CellUpdatesConsumer(AsyncJsonWebsocketConsumer):
             "id": event["data"]["id"],
             "entity": event["data"]["entity"],
         })
+
+    async def receive(self, text_data):
+        a = 1
