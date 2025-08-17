@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 
 from tables.models import Filial, Employee, Department, Profile, Admin, Table, Column, Cell, Row, RowPermission, \
-    TablePermission, TableFilialPermission, RowFilialPermission
+    TablePermission, TableFilialPermission, RowFilialPermission, CellLock
 from datetime import datetime
 
 from channels.layers import get_channel_layer
@@ -313,6 +313,8 @@ class RowFilialPermissionSerializer(serializers.ModelSerializer):
             return permissions
 
 
+
+
 class FileUploadSerializer(serializers.ModelSerializer):
     file = serializers.FileField(
         max_length=1024,
@@ -324,6 +326,7 @@ class FileUploadSerializer(serializers.ModelSerializer):
     #     fields = ['name','file']
     #     # model = File
     #     serializers.raise_errors_on_nested_writes = False
+
 
 
 

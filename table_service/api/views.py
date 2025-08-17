@@ -9,7 +9,7 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from tables.models import Filial, Department, Employee, Profile, Admin, Table, Cell, Column, Row, RowPermission, \
-    TablePermission, TableFilialPermission, RowFilialPermission
+    TablePermission, TableFilialPermission, RowFilialPermission, CellLock
 from .helper import get_table_ids_permissions, get_row_ids_permissions, FileUploadBrowsableRenderer, import_table, import_to_existing_table
 from .serializers import (
     UserSerializer,
@@ -312,5 +312,5 @@ class RowUploadViewSet(viewsets.ViewSet):
                 "filename": file.name,
                 "size": file.size,
             })
-
+        
 
