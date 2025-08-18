@@ -426,3 +426,8 @@ class TableFilialLock(models.Model):
 
     class Meta:
         unique_together = ('table', 'filial')
+
+class CellLock(models.Model):
+    cell = models.ForeignKey(Cell, on_delete=models.CASCADE, related_name='cells_lock_cell', unique=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='cells_lock_user')
+    locked_at = models.DateField()
