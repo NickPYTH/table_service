@@ -301,9 +301,10 @@ class RowFilialPermissionSerializer(serializers.ModelSerializer):
     filial_id = serializers.IntegerField()
     row_id = serializers.IntegerField()
     filial = FilialSerializer(read_only=True)
+    id = serializers.IntegerField(read_only=True)
     class Meta:
         model = RowFilialPermission
-        fields = ['filial_id','can_edit','can_delete','row_id','filial']
+        fields = ['id','filial_id','can_edit','can_delete','row_id','filial']
 
 
     def create(self, validated_data):
