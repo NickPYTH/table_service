@@ -2,7 +2,8 @@ from channels.generic.websocket import AsyncJsonWebsocketConsumer
 
 from api.utils import send_cell_lock_update
 from tables.models import Cell, CellLock
-
+import json
+import ast
 
 class TableUpdatesConsumer(AsyncJsonWebsocketConsumer):
     async def connect(self):
@@ -63,9 +64,10 @@ class CellLockUpdatesConsumer(AsyncJsonWebsocketConsumer):
 
     async def receive(self, text_data):
         # {type: "remove\create", cell_id: 123}
-        cell_id = text_data.get("cell_id")
+        data =ast.literal_eval(text_data)
+        cell_id = data["cell_id"]
         cell = Cell.objects.get(id=cell_id)
-        lock_type = text_data.get("type")
+        lock_type = data['type']
         user = self.scope["user"]
         if user.is_anonymous:
             await self.close()
