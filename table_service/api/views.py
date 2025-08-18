@@ -50,6 +50,19 @@ class FilialViewSet(viewsets.ModelViewSet):
     queryset = Filial.objects.all()
     serializer_class = FilialSerializer
     # permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        row_id = self.request.query_params.get('row_id')
+        table_id = self.request.query_params.get('table_id')
+        if row_id:
+            row = Row.objects.get(id=row_id)
+            filial_ids = RowFilialPermission.objects.filter(row=row).values_list('filial__id', flat=True)
+            queryset = queryset.exclude(id__in=filial_ids)
+        if table_id:
+            table = Table.objects.get(id=table_id)
+            filial_ids = Filial.objects.filter(table=table).values_list('filial__id', flat=True)
+            queryset = queryset.exclude(id__in=filial_ids)
+        return queryset
 
 
 class DepartmentViewSet(viewsets.ModelViewSet):
