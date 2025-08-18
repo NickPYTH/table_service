@@ -5,6 +5,7 @@ from django.contrib.auth.models import User
 from markdown.extensions.extra import extensions
 from rest_framework import viewsets, generics, status
 from rest_framework.decorators import action
+from rest_framework.generics import get_object_or_404
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
@@ -55,13 +56,19 @@ class FilialViewSet(viewsets.ModelViewSet):
         row_id = self.request.query_params.get('row_id')
         table_id = self.request.query_params.get('table_id')
         if row_id:
-            row = Row.objects.get(id=row_id)
-            filial_ids = RowFilialPermission.objects.filter(row=row).values_list('filial__id', flat=True)
-            queryset = queryset.exclude(id__in=filial_ids)
+            row = get_object_or_404(Row, pk=row_id)
+            if row:
+                filial_ids = RowFilialPermission.objects.filter(row=row).values_list('filial__id', flat=True)
+                queryset = queryset.exclude(id__in=filial_ids)
+            else:
+                return  queryset.none()
         if table_id:
-            table = Table.objects.get(id=table_id)
-            filial_ids = Filial.objects.filter(table=table).values_list('filial__id', flat=True)
-            queryset = queryset.exclude(id__in=filial_ids)
+            table = get_object_or_404(Table, pk=table_id)
+            if table:
+                filial_ids = Filial.objects.filter(table=table).values_list('filial__id', flat=True)
+                queryset = queryset.exclude(id__in=filial_ids)
+            else:
+                return queryset.none()
         return queryset
 
 
