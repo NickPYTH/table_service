@@ -30,6 +30,7 @@ class CellUpdatesConsumer(AsyncJsonWebsocketConsumer):
         await self.channel_layer.group_add("cell_list_updates", self.channel_name)
 
     async def disconnect(self, close_code):
+        # todo remove all user locks
         await self.channel_layer.group_discard("cell_list_updates", self.channel_name)
 
     async def cell_updated(self, event):
@@ -40,4 +41,23 @@ class CellUpdatesConsumer(AsyncJsonWebsocketConsumer):
         })
 
     async def receive(self, text_data):
+        a = 1
+
+class CellLockUpdatesConsumer(AsyncJsonWebsocketConsumer):
+    async def connect(self):
+        await self.accept()
+        await self.channel_layer.group_add("cell_lock_updates", self.channel_name)
+
+    async def disconnect(self, close_code):
+        await self.channel_layer.group_discard("cell_lock_updates", self.channel_name)
+
+    async def cell_lock_updated(self, event):
+        await self.send_json({
+            "type": "cell_lock_update",
+            "id": event["data"]["id"],
+            "entity": event["data"]["entity"],
+        })
+
+    async def receive(self, text_data):
+        # {type: "remove\create", cell_id: 123}
         a = 1

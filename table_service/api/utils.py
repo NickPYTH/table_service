@@ -58,3 +58,22 @@ def send_cell_update(instance=None):
         }
     )
 
+def send_cell_lock_update(instance=None):
+    channel_layer = get_channel_layer()
+
+    #serializer = CellSerializer(instance)
+    #serialized_data = serializer.data
+
+    async_to_sync(channel_layer.group_send)(
+        "cell_lock_updates",
+        {
+            "type": "cell.lock.updated",
+            "data": {
+                "id": instance.id if instance else None,
+                "entity": {},
+                "message": "Cell lock updated",
+            }
+        }
+    )
+
+

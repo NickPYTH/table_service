@@ -38,7 +38,6 @@ INSTALLED_APPS = [
     'django_tables2',
     'django_bootstrap5',
     'corsheaders',
-
     'api.apps.ApiConfig',
 ]
 
