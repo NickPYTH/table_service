@@ -1,7 +1,7 @@
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 
-from api.serializers import TableDetailSerializer, CellSerializer
+from api.serializers import TableDetailSerializer, CellSerializer, CellLockSerializer
 
 
 def send_table_update(instance=None):
@@ -61,8 +61,8 @@ def send_cell_update(instance=None):
 def send_cell_lock_update(instance=None):
     channel_layer = get_channel_layer()
 
-    #serializer = CellSerializer(instance)
-    #serialized_data = serializer.data
+    serializer = CellLockSerializer(instance)
+    serialized_data = serializer.data
 
     async_to_sync(channel_layer.group_send)(
         "cell_lock_updates",
@@ -70,7 +70,7 @@ def send_cell_lock_update(instance=None):
             "type": "cell.lock.updated",
             "data": {
                 "id": instance.id if instance else None,
-                "entity": {},
+                "entity": serialized_data,
                 "message": "Cell lock updated",
             }
         }

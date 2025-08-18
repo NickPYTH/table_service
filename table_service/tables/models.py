@@ -430,4 +430,4 @@ class TableFilialLock(models.Model):
 class CellLock(models.Model):
     cell = models.ForeignKey(Cell, on_delete=models.CASCADE, related_name='cells_lock_cell', unique=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='cells_lock_user')
-    locked_at = models.DateField()
+    locked_at = models.DateTimeField(default=datetime.datetime.now())

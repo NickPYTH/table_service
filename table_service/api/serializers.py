@@ -281,12 +281,13 @@ class TableFilialPermissionsSerializer(serializers.ModelSerializer):
 
 
 class RowPermissionSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(read_only=True)
     user_id = serializers.IntegerField()
     row_id = serializers.IntegerField()
     user = UserSerializer(read_only=True)
     class Meta:
         model = RowPermission
-        fields = ['row_id','user_id','can_edit','can_delete', 'user']
+        fields = ['id','row_id','user_id','can_edit','can_delete', 'user']
 
     def create(self, validated_data):
         row = get_object_or_404(Row,id=validated_data['row_id'])
@@ -312,6 +313,14 @@ class RowFilialPermissionSerializer(serializers.ModelSerializer):
             permissions = RowFilialPermission.objects.create(filial=filial, row=row, **validated_data)
             return permissions
 
+
+class CellLockSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(read_only=True)
+    cell = CellSerializer(read_only=True)
+    user = UserSerializer(read_only=True)
+    class Meta:
+        model = CellLock
+        fields = ['id','cell','user','locked_at']
 
 
 

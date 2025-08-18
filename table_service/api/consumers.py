@@ -1,5 +1,8 @@
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 
+from api.utils import send_cell_lock_update
+from tables.models import Cell, CellLock
+
 
 class TableUpdatesConsumer(AsyncJsonWebsocketConsumer):
     async def connect(self):
@@ -60,4 +63,18 @@ class CellLockUpdatesConsumer(AsyncJsonWebsocketConsumer):
 
     async def receive(self, text_data):
         # {type: "remove\create", cell_id: 123}
-        a = 1
+        cell_id = text_data.get("cell_id")
+        cell = Cell.objects.get(id=cell_id)
+        lock_type = text_data.get("type")
+        user = self.scope["user"]
+        if user.is_anonymous:
+            await self.close()
+            return
+
+        if lock_type == "create":
+            cell_lock = CellLock.objects.create(cell=cell, user=user)
+            send_cell_lock_update(cell_lock)
+        elif lock_type == "remove":
+            cell_lock = CellLock.objects.get(cell=cell)
+            if cell_lock:
+                cell_lock.delete()

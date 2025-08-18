@@ -34,14 +34,14 @@ class UserViewSet(viewsets.ModelViewSet):
         queryset = super().get_queryset()
         table_id = self.request.query_params.get('table_id', None)
         row_id = self.request.query_params.get('row_id', None)
-        can_edit = self.request.query_params.get('can_edit', None)
-        can_delete = self.request.query_params.get('can_delete', None)
+        if row_id and table_id:
+            user_ids_table = TablePermission.objects.filter(table_id=table_id).values_list('user_id', flat=True)
+            user_ids_row = RowPermission.objects.filter(table_id=table_id).values_list('user__id', flat=True)
+            user_ids = set(user_ids_table).difference(set(user_ids_row))
+            queryset = queryset.filter(user__id__in=user_ids)
         if table_id:
             user_ids = TablePermission.objects.filter(table_id=table_id).values_list('user__id', flat=True)
             queryset = queryset.exclude(id__in=user_ids)
-        if row_id and can_edit and can_delete:
-            user_ids = RowPermission.objects.filter(row_id=row_id).values_list('user__id', flat=True)
-            queryset = queryset.exclude(user__id__in=user_ids,can_edit=can_edit, can_delete=can_delete)
         return queryset
 
 
