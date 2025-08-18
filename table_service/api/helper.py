@@ -1,12 +1,15 @@
 from datetime import date
+from pickle import FALSE
+
 from django.db import transaction
 from django.db.models.aggregates import Max
 from django.utils.safestring import mark_safe
+from rest_framework.generics import get_object_or_404
 from rest_framework.renderers import BrowsableAPIRenderer
-
+from asgiref.sync import sync_to_async
 from api.utils import send_table_create
 from tables.models import TablePermission, TableFilialPermission, Profile, RowPermission, RowFilialPermission, Table, \
-    Row, Cell, Column
+    Row, Cell, Column, CellLock
 
 import openpyxl
 from io import BytesIO
@@ -256,3 +259,27 @@ def import_to_existing_table(file, table_id, user):
     except Exception as e:
     # Логируем ошибку (можно использовать logging.exception(e))
         raise  #
+
+
+@sync_to_async(thread_sensitive=False)
+def get_cell_by_id(cell_id):
+    cell = get_object_or_404(Cell, pk=cell_id)
+    return cell
+
+@sync_to_async(thread_sensitive=False)
+def create_cell_lock(cell,user):
+    cell_lock = CellLock.objects.create(cell=cell, user=user)
+    return cell_lock
+
+@sync_to_async(thread_sensitive=False)
+def get_cell_lock_by_cell(cell):
+    cell_lock = CellLock.objects.get(cell=cell)
+    return cell_lock
+
+@sync_to_async(thread_sensitive=False)
+def remove_cell_lock(cell_lock):
+    dell_cell_lock = cell_lock.delete()
+    return dell_cell_lock
+
+
+

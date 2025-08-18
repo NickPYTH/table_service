@@ -1,5 +1,6 @@
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 
+from api.helper import get_cell_by_id, create_cell_lock, get_cell_lock_by_cell, remove_cell_lock
 from api.utils import send_cell_lock_update
 from tables.models import Cell, CellLock
 import json
@@ -66,7 +67,7 @@ class CellLockUpdatesConsumer(AsyncJsonWebsocketConsumer):
         # {type: "remove\create", cell_id: 123}
         data =ast.literal_eval(text_data)
         cell_id = data["cell_id"]
-        cell = Cell.objects.get(id=cell_id)
+        cell = await get_cell_by_id(cell_id)
         lock_type = data['type']
         user = self.scope["user"]
         if user.is_anonymous:
@@ -74,9 +75,9 @@ class CellLockUpdatesConsumer(AsyncJsonWebsocketConsumer):
             return
 
         if lock_type == "create":
-            cell_lock = CellLock.objects.create(cell=cell, user=user)
+            cell_lock = await create_cell_lock(cell, user)
             send_cell_lock_update(cell_lock)
         elif lock_type == "remove":
-            cell_lock = CellLock.objects.get(cell=cell)
+            cell_lock = get_cell_lock_by_cell(cell)
             if cell_lock:
-                cell_lock.delete()
+                remove_cell_lock(cell_lock)
