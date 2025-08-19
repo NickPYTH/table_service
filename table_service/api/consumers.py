@@ -79,8 +79,8 @@ class CellLockUpdatesConsumer(AsyncJsonWebsocketConsumer):
 
         if lock_type == "create":
             cell_lock = await create_cell_lock(cell, user)
-            send_cell_lock_update(cell_lock)
+            await send_cell_lock_update(cell_lock)
         elif lock_type == "remove":
-            cell_lock = get_cell_lock_by_cell(cell)
+            cell_lock = await get_cell_lock_by_cell(cell)
             if cell_lock:
-                remove_cell_lock(cell_lock)
+                await remove_cell_lock(cell_lock)

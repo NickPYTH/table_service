@@ -1,4 +1,4 @@
-from asgiref.sync import async_to_sync
+from asgiref.sync import async_to_sync, sync_to_async
 from channels.layers import get_channel_layer
 
 from api.serializers import TableDetailSerializer, CellSerializer, CellLockSerializer
@@ -58,6 +58,7 @@ def send_cell_update(instance=None):
         }
     )
 
+@sync_to_async(thread_sensitive=False)
 def send_cell_lock_update(instance=None):
     channel_layer = get_channel_layer()
 
