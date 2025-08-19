@@ -77,4 +77,23 @@ def send_cell_lock_update(instance=None):
         }
     )
 
+@sync_to_async(thread_sensitive=False)
+def send_cell_lock_remove(instance=None):
+    channel_layer = get_channel_layer()
+
+    serializer = CellLockSerializer(instance)
+    serialized_data = serializer.data
+
+    async_to_sync(channel_layer.group_send)(
+        "cell_lock_updates",
+        {
+            "type": "cell.lock.removed",
+            "data": {
+                "id": instance.id if instance else None,
+                "entity": serialized_data,
+                "message": "Cell lock removed",
+            }
+        }
+    )
+
 

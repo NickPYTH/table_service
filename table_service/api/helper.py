@@ -12,7 +12,7 @@ from rest_framework.renderers import BrowsableAPIRenderer
 from asgiref.sync import sync_to_async
 from rest_framework.response import Response
 
-from api.utils import send_table_create
+from api.utils import send_table_create, send_cell_lock_remove
 from tables.models import TablePermission, TableFilialPermission, Profile, RowPermission, RowFilialPermission, Table, \
     Row, Cell, Column, CellLock, User
 

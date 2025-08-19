@@ -3,7 +3,7 @@ from tables.models import User
 
 
 from api.helper import get_cell_by_id, create_cell_lock, get_cell_lock_by_cell, remove_cell_lock, get_user
-from api.utils import send_cell_lock_update
+from api.utils import send_cell_lock_update, send_cell_lock_remove
 from tables.models import Cell, CellLock
 import json
 import ast
@@ -65,6 +65,13 @@ class CellLockUpdatesConsumer(AsyncJsonWebsocketConsumer):
             "entity": event["data"]["entity"],
         })
 
+    async def cell_lock_removed(self, event):
+        await self.send_json({
+            "type": "cell_lock_remove",
+            "id": event["data"]["id"],
+            "entity": event["data"]["entity"],
+        })
+
     async def receive(self, text_data):
         # {type: "remove\create", cell_id: 123, user_id: 1}
         data =ast.literal_eval(text_data)
@@ -83,4 +90,5 @@ class CellLockUpdatesConsumer(AsyncJsonWebsocketConsumer):
         elif lock_type == "remove":
             cell_lock = await get_cell_lock_by_cell(cell)
             if cell_lock:
+                await send_cell_lock_remove(cell_lock)
                 await remove_cell_lock(cell_lock)
