@@ -1,12 +1,17 @@
-from datetime import date
+import io
+from datetime import date, datetime
 from pickle import FALSE
 
 from django.db import transaction
 from django.db.models.aggregates import Max
 from django.utils.safestring import mark_safe
+from openpyxl.styles import Font
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.generics import get_object_or_404
 from rest_framework.renderers import BrowsableAPIRenderer
 from asgiref.sync import sync_to_async
+from rest_framework.response import Response
+
 from api.utils import send_table_create
 from tables.models import TablePermission, TableFilialPermission, Profile, RowPermission, RowFilialPermission, Table, \
     Row, Cell, Column, CellLock
@@ -280,6 +285,60 @@ def get_cell_lock_by_cell(cell):
 def remove_cell_lock(cell_lock):
     dell_cell_lock = cell_lock.delete()
     return dell_cell_lock
+
+def export_to_xlsx(self, table_obj):
+    # Создаем новую книгу Excel
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = table_obj.title[:31]  # Ограничение длины названия листа в Excel
+
+    # Получаем данные таблицы
+    columns = table_obj.columns.all().order_by('order')
+    rows = table_obj.rows.all().order_by('order')
+
+    # Заголовки столбцов
+    headers = [column.name for column in columns]
+    ws.append(headers)
+
+    # Стиль для заголовков
+    for cell in ws[1]:
+        cell.font = Font(bold=True)
+
+    # Данные ячеек
+    for row in rows:
+        row_data = []
+        for column in columns:
+            cell = row.cells.filter(column=column).first()
+            if cell:
+                # Получаем значение в зависимости от типа данных
+                if column.data_type == Column.ColumnType.TEXT:
+                    row_data.append(cell.text_value)
+                elif column.data_type == Column.ColumnType.INTEGER:
+                    row_data.append(cell.integer_value)
+                elif column.data_type == Column.ColumnType.FLOAT:
+                    row_data.append(cell.float_value)
+                elif column.data_type == Column.ColumnType.BOOLEAN:
+                    row_data.append(cell.boolean_value)
+                elif column.data_type == Column.ColumnType.DATE:
+                    row_data.append(cell.date_value.strftime('%Y-%m-%d') if cell.date_value else None)
+            else:
+                row_data.append(None)
+        ws.append(row_data)
+
+    # Сохраняем в буфер
+    buffer = io.BytesIO()
+    wb.save(buffer)
+    buffer.seek(0)
+
+    # Формируем имя файла
+    filename = f"{table_obj.title}_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+
+    return Response(
+        buffer.getvalue(),
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        headers={'Content-Disposition': f'attachment; filename="{filename}"'}
+    )
+
 
 
 

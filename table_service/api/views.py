@@ -2,6 +2,10 @@ import os
 from io import BytesIO
 
 from django.contrib.auth.models import User
+from django.http import HttpResponseForbidden
+from django.shortcuts import render
+from django_tables2 import RequestConfig
+from django_tables2.export import TableExport
 from markdown.extensions.extra import extensions
 from rest_framework import viewsets, generics, status
 from rest_framework.decorators import action
@@ -11,7 +15,8 @@ from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from tables.models import Filial, Department, Employee, Profile, Admin, Table, Cell, Column, Row, RowPermission, \
     TablePermission, TableFilialPermission, RowFilialPermission, CellLock
-from .helper import get_table_ids_permissions, get_row_ids_permissions, FileUploadBrowsableRenderer, import_table, import_to_existing_table
+from tables.tables import ExportTable
+from .helper import get_table_ids_permissions, get_row_ids_permissions, FileUploadBrowsableRenderer, import_table, import_to_existing_table, export_to_xlsx
 from .serializers import (
     UserSerializer,
     FilialSerializer,
@@ -167,6 +172,16 @@ class TableDetailViewSet(viewsets.ModelViewSet):
             return Response({"success": True})
         except:
             return Response({"success": False})
+
+
+    @action(detail=True, methods=['get'], url_path='export')
+    def export_table(self, request, pk=None):
+        table_obj = get_object_or_404(Table, pk=pk)
+        format_type = request.query_params.get('format', 'xlsx').lower()
+        if format_type == 'xlsx':
+            return export_to_xlsx(self,table_obj)
+
+
 
     def get_queryset(self):
         queryset = super().get_queryset()

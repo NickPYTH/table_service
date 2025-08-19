@@ -1,4 +1,5 @@
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
+from rest_framework.authtoken.admin import User
 
 from api.helper import get_cell_by_id, create_cell_lock, get_cell_lock_by_cell, remove_cell_lock
 from api.utils import send_cell_lock_update
@@ -64,12 +65,13 @@ class CellLockUpdatesConsumer(AsyncJsonWebsocketConsumer):
         })
 
     async def receive(self, text_data):
-        # {type: "remove\create", cell_id: 123}
+        # {type: "remove\create", cell_id: 123, user_id: 1}
         data =ast.literal_eval(text_data)
         cell_id = data["cell_id"]
         cell = await get_cell_by_id(cell_id)
         lock_type = data['type']
-        user = self.scope["user"]
+        # user = self.scope["user"]
+        user = User.objects.get(id=cell['user_id'])
         if user.is_anonymous:
             await self.close()
             return
