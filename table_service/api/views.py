@@ -143,21 +143,20 @@ class TableDetailViewSet(viewsets.ModelViewSet):
             'rows__cells__column',
         )
 
-    @action(detail=True, methods=['get'], url_path='rowpermissions')
-    def row_permissions(self, request, pk=None):
-        pass
-        # table_id = request.query_params.get('table_id')
-        # rows_ids = Row.objects.filter(table_id=table_id).values_list('row_id', flat=True)
-        # row_permissions = RowPermission.objects.filter(row__id__in=rows_ids)
-        # return RowPermissionSerializer(row_permissions, many=True).data
+    @action(detail=True, methods=['get'], url_path='locks')
+    def cell_lock(self, request, pk=None):
+        columns_ids = Column.objects.filter(table_id=pk).values_list('id', flat=True)
+        cells_ids = Cell.objects.filter(column_id__in=columns_ids).values_list('id', flat=True)
+        cells_lock = CellLock.objects.filter(cell_id__in=cells_ids).select_related('cell').values_list('cell_id', flat=True)
+        return Response(cells_lock)
 
-    @action(detail=True, methods=['get'], url_path='cellpermissions')
-    def cell(self, request, pk=None):
-        pass
-
-    @action(detail=True, methods=['get'], url_path='cellss')
-    def cellss(self, request, pk=None):
-        pass
+    @action(detail=True, methods=['get'], url_path='not_locked')
+    def not_locked(self, request, pk=None):
+        columns_ids = Column.objects.filter(table_id=pk).values_list('id', flat=True)
+        cells_ids = Cell.objects.filter(column_id__in=columns_ids).values_list('id', flat=True)
+        cells_locked = CellLock.objects.filter(cell_id__in=cells_ids).select_related('cell').values_list('cell_id', flat=True)
+        cells_not_locked = set(cells_ids) - set(cells_locked)
+        return Response(cells_not_locked)
 
 
     def get_queryset(self):
