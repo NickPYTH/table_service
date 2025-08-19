@@ -273,6 +273,8 @@ def get_cell_by_id(cell_id):
 
 @sync_to_async(thread_sensitive=False)
 def create_cell_lock(cell,user):
+    if CellLock.objects.filter(cell=cell, user=user).count() > 0:
+        return CellLock.objects.filter(cell=cell, user=user)[0]
     cell_lock = CellLock.objects.create(cell=cell, user=user)
     return cell_lock
 
@@ -283,8 +285,9 @@ def get_cell_lock_by_cell(cell):
 
 @sync_to_async(thread_sensitive=False)
 def remove_cell_lock(cell_lock):
-    cell_ids = Cell.objects.all().values_list('cell_id', flat=True)
-    cell_locks = CellLock.objects.filter(cell_ids__in=cell_ids)
+    cell_lock.delete()
+    cell_ids = Cell.objects.all().values_list('id', flat=True)
+    cell_locks = CellLock.objects.filter(cell_id__in=cell_ids)
     result = [{'cell_id':lock.cell_id,'user_id':lock.user_id} for lock in cell_locks]
     return result
 
