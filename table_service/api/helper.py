@@ -14,7 +14,7 @@ from rest_framework.response import Response
 
 from api.utils import send_table_create
 from tables.models import TablePermission, TableFilialPermission, Profile, RowPermission, RowFilialPermission, Table, \
-    Row, Cell, Column, CellLock
+    Row, Cell, Column, CellLock, User
 
 import openpyxl
 from io import BytesIO
@@ -285,6 +285,11 @@ def get_cell_lock_by_cell(cell):
 def remove_cell_lock(cell_lock):
     dell_cell_lock = cell_lock.delete()
     return dell_cell_lock
+
+@sync_to_async(thread_sensitive=False)
+def get_user(user_id):
+    user = User.objects.get(id=user_id)
+    return user
 
 def export_to_xlsx(self, table_obj):
     # Создаем новую книгу Excel

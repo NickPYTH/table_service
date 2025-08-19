@@ -2,7 +2,7 @@ from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from tables.models import User
 
 
-from api.helper import get_cell_by_id, create_cell_lock, get_cell_lock_by_cell, remove_cell_lock
+from api.helper import get_cell_by_id, create_cell_lock, get_cell_lock_by_cell, remove_cell_lock, get_user
 from api.utils import send_cell_lock_update
 from tables.models import Cell, CellLock
 import json
@@ -72,7 +72,7 @@ class CellLockUpdatesConsumer(AsyncJsonWebsocketConsumer):
         cell = await get_cell_by_id(cell_id)
         lock_type = data['type']
         # user = self.scope["user"]
-        user = User.objects.get(id=cell['user_id'])
+        user = await get_user(data['user_id'])
         if user.is_anonymous:
             await self.close()
             return
