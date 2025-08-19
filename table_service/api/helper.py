@@ -283,9 +283,8 @@ def get_cell_lock_by_cell(cell):
 
 @sync_to_async(thread_sensitive=False)
 def remove_cell_lock(cell_lock):
-    # Все идшники заблокированных ячеек
     cell_ids = Cell.objects.all().values_list('cell_id', flat=True)
-    cell_locks = CellLock.objects.filter(cell_ids__in=cell_ids).values_list('cell_id', flat=True)
+    cell_locks = CellLock.objects.filter(cell_ids__in=cell_ids).values_list('cell_id','user_id', flat=True)
     return cell_locks
 
 @sync_to_async(thread_sensitive=False)
