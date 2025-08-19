@@ -152,14 +152,14 @@ class TableDetailViewSet(viewsets.ModelViewSet):
     def cell_lock(self, request, pk=None):
         columns_ids = Column.objects.filter(table_id=pk).values_list('id', flat=True)
         cells_ids = Cell.objects.filter(column_id__in=columns_ids).values_list('id', flat=True)
-        cells_lock = CellLock.objects.filter(cell_id__in=cells_ids).select_related('cell').values_list('cell_id', flat=True)
+        cells_lock = CellLock.objects.filter(cell_id__in=cells_ids).select_related('cell').values_list('cell_id','user_id', flat=True)
         return Response(cells_lock)
 
     @action(detail=True, methods=['get'], url_path='not_locked')
     def not_locked(self, request, pk=None):
         columns_ids = Column.objects.filter(table_id=pk).values_list('id', flat=True)
         cells_ids = Cell.objects.filter(column_id__in=columns_ids).values_list('id', flat=True)
-        cells_locked = CellLock.objects.filter(cell_id__in=cells_ids).select_related('cell').values_list('cell_id', flat=True)
+        cells_locked = CellLock.objects.filter(cell_id__in=cells_ids).select_related('cell').values_list('cell_id','user_id', flat=True)
         cells_not_locked = set(cells_ids) - set(cells_locked)
         return Response(cells_not_locked)
 
