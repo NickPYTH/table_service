@@ -143,6 +143,22 @@ class TableDetailViewSet(viewsets.ModelViewSet):
             'rows__cells__column',
         )
 
+    @action(detail=True, methods=['get'], url_path='rowpermissions')
+    def row_permissions(self, request, pk=None):
+        pass
+        # table_id = request.query_params.get('table_id')
+        # rows_ids = Row.objects.filter(table_id=table_id).values_list('row_id', flat=True)
+        # row_permissions = RowPermission.objects.filter(row__id__in=rows_ids)
+        # return RowPermissionSerializer(row_permissions, many=True).data
+
+    @action(detail=True, methods=['get'], url_path='cellpermissions')
+    def cell(self, request, pk=None):
+        pass
+
+    @action(detail=True, methods=['get'], url_path='cellss')
+    def cellss(self, request, pk=None):
+        pass
+
 
     def get_queryset(self):
         queryset = super().get_queryset()

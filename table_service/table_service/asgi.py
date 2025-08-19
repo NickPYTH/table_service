@@ -1,7 +1,7 @@
 import os
 from django.core.asgi import get_asgi_application
 from django.urls import path
-
+from channels.auth import AuthMiddlewareStack
 # Установка переменной окружения ДО всех импортов
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'table_service.settings')
 
@@ -18,9 +18,10 @@ from api.consumers import TableUpdatesConsumer, CellUpdatesConsumer, CellLockUpd
 
 application = ProtocolTypeRouter({
     "http": django_application,
-    "websocket": URLRouter([
-        path("ws/table-updates/", TableUpdatesConsumer.as_asgi()),
-        path("ws/cell-updates/", CellUpdatesConsumer.as_asgi()),
-        path("ws/cell-lock-updates/", CellLockUpdatesConsumer.as_asgi()),
-    ]),
+    "websocket": AuthMiddlewareStack (URLRouter([
+            path("ws/table-updates/", TableUpdatesConsumer.as_asgi()),
+            path("ws/cell-updates/", CellUpdatesConsumer.as_asgi()),
+            path("ws/cell-lock-updates/", CellLockUpdatesConsumer.as_asgi()),
+        ])
+    ),
 })

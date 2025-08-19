@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from django.contrib.admin import action
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
@@ -222,6 +223,8 @@ class TableDetailSerializer(serializers.ModelSerializer):
             }
             for cell in Cell.objects.filter(row__table=obj)
         ]
+
+    # @action(detail=False, methods=['post'])
 
 
 class TableListSerializer(serializers.ModelSerializer):
