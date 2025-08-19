@@ -158,6 +158,19 @@ class TableDetailViewSet(viewsets.ModelViewSet):
         cells_not_locked = set(cells_ids) - set(cells_locked)
         return Response(cells_not_locked)
 
+    @action(detail=True, methods=['get'], url_path='remove_locks')
+    def remove_all_locks(self, request, pk=None):
+        columns_ids = Column.objects.filter(table_id=pk).values_list('id', flat=True)
+        cells_ids = Cell.objects.filter(column_id__in=columns_ids).values_list('id', flat=True)
+        try:
+            CellLock.objects.filter(cell_id__in=cells_ids).delete()
+            return Response({"success": True})
+        except:
+            return Response({"success": False})
+
+
+
+
 
     def get_queryset(self):
         queryset = super().get_queryset()
