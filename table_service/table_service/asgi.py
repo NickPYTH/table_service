@@ -1,27 +1,28 @@
 import os
 from django.core.asgi import get_asgi_application
-from django.urls import path
-from channels.auth import AuthMiddlewareStack
-# Установка переменной окружения ДО всех импортов
+
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'table_service.settings')
 
-# Получаем Django application
+# Инициализируем Django перед импортом middleware
 django_application = get_asgi_application()
 
-# Импортируем Channels только после настройки Django
 from channels.routing import ProtocolTypeRouter, URLRouter
-import django
-django.setup()  # Явная настройка Django
+from channels.auth import AuthMiddlewareStack
+from django.urls import path
 
-# Теперь безопасно импортируем consumers
+# Импортируем middleware ПОСЛЕ инициализации Django
+from api.middleware import WebSocketRemoteUserMiddleware
 from api.consumers import TableUpdatesConsumer, CellUpdatesConsumer, CellLockUpdatesConsumer
 
 application = ProtocolTypeRouter({
     "http": django_application,
-    "websocket": AuthMiddlewareStack (URLRouter([
-            path("ws/table-updates/", TableUpdatesConsumer.as_asgi()),
-            path("ws/cell-updates/", CellUpdatesConsumer.as_asgi()),
-            path("ws/cell-lock-updates/", CellLockUpdatesConsumer.as_asgi()),
-        ])
+    "websocket": WebSocketRemoteUserMiddleware(
+        AuthMiddlewareStack(
+            URLRouter([
+                path("ws/table-updates/", TableUpdatesConsumer.as_asgi()),
+                path("ws/cell-updates/", CellUpdatesConsumer.as_asgi()),
+                path("ws/cell-lock-updates/", CellLockUpdatesConsumer.as_asgi()),
+            ])
+        )
     ),
 })

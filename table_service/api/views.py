@@ -168,10 +168,6 @@ class TableDetailViewSet(viewsets.ModelViewSet):
         except:
             return Response({"success": False})
 
-
-
-
-
     def get_queryset(self):
         queryset = super().get_queryset()
         table_id = self.kwargs.get('pk')
