@@ -1,5 +1,6 @@
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
-from rest_framework.authtoken.admin import User
+from tables.models import User
+
 
 from api.helper import get_cell_by_id, create_cell_lock, get_cell_lock_by_cell, remove_cell_lock
 from api.utils import send_cell_lock_update
