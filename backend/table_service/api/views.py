@@ -13,6 +13,7 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
 from tables.models import Filial, Department, Employee, Profile, Admin, Table, Cell, Column, Row, RowPermission, \
     TablePermission, TableFilialPermission, RowFilialPermission, CellLock
 from tables.tables import ExportTable
@@ -35,7 +36,7 @@ from .utils import send_table_update, send_cell_update
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    # permission_classes = [permissions.IsAdminUser]
+    permission_classes = [IsAuthenticated]
     def get_queryset(self):
         queryset = super().get_queryset()
         table_id = self.request.query_params.get('table_id', None)

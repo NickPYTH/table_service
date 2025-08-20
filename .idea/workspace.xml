@@ -4,18 +4,177 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="cbc612b9-a52e-45c3-8bf8-69a4a5aece77" name="Changes" comment="Передаются данные об измененной сущность таблицы">
+    <list default="true" id="cbc612b9-a52e-45c3-8bf8-69a4a5aece77" name="Changes" comment="WS для блокировок">
+      <change afterPath="$PROJECT_DIR$/backend/table_service/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/api/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/api/admin.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/api/apps.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/api/backends.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/api/consumers.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/api/helper.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/api/middleware.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/api/migrations/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/api/models.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/api/serializers.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/api/tests.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/api/urls.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/api/utils.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/api/views.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/manage.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/requirements.txt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/run.sh" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/table_service/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/table_service/asgi.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/table_service/settings.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/table_service/wsgi.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/tables/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/tables/admin.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/tables/apps.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/tables/cron_script/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/tables/cron_script/cron_script.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/tables/forms.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/tables/migrations/0001_initial.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/tables/migrations/0002_column_data_type.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/tables/migrations/0003_alter_column_data_type.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/tables/migrations/0004_remove_cell_value_cell_boolean_value_cell_date_value_and_more.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/tables/migrations/0005_alter_cell_date_value.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/tables/migrations/0006_alter_cell_date_value.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/tables/migrations/0007_row_created_by_rowpermission_can_delete_and_more.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/tables/migrations/0008_remove_rowpermission_created_by_owner.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/tables/migrations/0009_filial_employee_profile.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/tables/migrations/0010_alter_employee_id_filial.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/tables/migrations/0011_department_rename_enddate_employee_end_date_and_more.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/tables/migrations/0012_rowlock.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/tables/migrations/0013_alter_rowlock_locked_at_tablepermission.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/tables/migrations/0014_tablefilialpermission.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/tables/migrations/0015_alter_rowlock_locked_at.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/tables/migrations/0016_remove_table_updated_at_alter_rowlock_locked_at_and_more.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/tables/migrations/0017_tablefiliallock.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/tables/migrations/0018_remove_tablefiliallock_is_locked_and_more.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/tables/migrations/0019_tableadmin.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/tables/migrations/0020_admin_delete_tableadmin.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/tables/migrations/0021_alter_admin_created_at.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/tables/migrations/0022_alter_admin_created_at_alter_department_id_and_more.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/tables/migrations/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/tables/models.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/tables/service.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/tables/static/css/all.min.css" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/tables/static/css/bootstrap-icons.css" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/tables/static/css/bootstrap.min.css" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/tables/static/css/column_tables.css" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/tables/static/css/fonts/bootstrap-icons.woff2" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/tables/static/css/table_form.css" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/tables/static/favicon.ico" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/tables/static/js/bootstrap.bundle.min.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/tables/static/js/jquery-3.7.1.min.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/tables/static/js/row_edit_modal.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/tables/static/webfonts/fa-solid-900.woff2" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/tables/tables.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/tables/templates/registration/login.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/tables/templates/tables/add_column/add_column.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/tables/templates/tables/add_row/add_row.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/tables/templates/tables/add_row/unlock_row.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/tables/templates/tables/create_table.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/tables/templates/tables/export/export_table.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/tables/templates/tables/manage_admins.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/tables/templates/tables/manage_permissions.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/tables/templates/tables/manage_table_permissions.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/tables/templates/tables/row_edit_form/row_edit_form.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/tables/templates/tables/shared_table.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/tables/templates/tables/shared_tables_list.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/tables/templates/tables/table_detail.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/tables/templates/tables/table_list.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/tables/tests.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/tables/urls.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/tables/views.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/table_service/templates/base.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/dataSources.local.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dataSources.local.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/dataSources.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dataSources.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/dataSources/b4e9259d-1287-4244-8643-2f63c7c13c11.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dataSources/b4e9259d-1287-4244-8643-2f63c7c13c11.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/dataSources/b4e9259d-1287-4244-8643-2f63c7c13c11/storage_v2/_src_/database/default_db.PGdzKA/schema/table_service.RPsJjg.meta" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dataSources/b4e9259d-1287-4244-8643-2f63c7c13c11/storage_v2/_src_/database/default_db.PGdzKA/schema/table_service.RPsJjg.meta" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/table_service.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/table_service.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/table_service/.env" beforeDir="false" afterPath="$PROJECT_DIR$/table_service/.env" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/table_service/api/consumers.py" beforeDir="false" afterPath="$PROJECT_DIR$/table_service/api/consumers.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/table_service/api/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/table_service/api/utils.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/table_service/api/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/table_service/api/views.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/table_service/table_service/asgi.py" beforeDir="false" afterPath="$PROJECT_DIR$/table_service/table_service/asgi.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/table_service/table_service/routing.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/backend/Dockerfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/.env" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/api/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/api/admin.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/api/apps.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/api/backends.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/api/consumers.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/api/helper.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/api/middleware.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/api/migrations/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/api/models.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/api/serializers.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/api/tests.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/api/urls.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/api/utils.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/api/views.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/manage.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/requirements.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/run.sh" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/table_service/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/table_service/asgi.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/table_service/settings.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/table_service/wsgi.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/tables/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/tables/admin.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/tables/apps.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/tables/cron_script/cron_script.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/tables/forms.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/tables/migrations/0001_initial.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/tables/migrations/0002_column_data_type.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/tables/migrations/0003_alter_column_data_type.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/tables/migrations/0004_remove_cell_value_cell_boolean_value_cell_date_value_and_more.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/tables/migrations/0005_alter_cell_date_value.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/tables/migrations/0006_alter_cell_date_value.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/tables/migrations/0007_row_created_by_rowpermission_can_delete_and_more.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/tables/migrations/0008_remove_rowpermission_created_by_owner.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/tables/migrations/0009_filial_employee_profile.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/tables/migrations/0010_alter_employee_id_filial.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/tables/migrations/0011_department_rename_enddate_employee_end_date_and_more.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/tables/migrations/0012_rowlock.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/tables/migrations/0013_alter_rowlock_locked_at_tablepermission.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/tables/migrations/0014_tablefilialpermission.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/tables/migrations/0015_alter_rowlock_locked_at.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/tables/migrations/0016_remove_table_updated_at_alter_rowlock_locked_at_and_more.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/tables/migrations/0017_tablefiliallock.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/tables/migrations/0018_remove_tablefiliallock_is_locked_and_more.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/tables/migrations/0019_tableadmin.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/tables/migrations/0020_admin_delete_tableadmin.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/tables/migrations/0021_alter_admin_created_at.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/tables/migrations/0022_alter_admin_created_at_alter_department_id_and_more.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/tables/migrations/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/tables/models.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/tables/service.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/tables/static/css/all.min.css" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/tables/static/css/bootstrap-icons.css" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/tables/static/css/bootstrap.min.css" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/tables/static/css/column_tables.css" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/tables/static/css/fonts/bootstrap-icons.woff2" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/tables/static/css/table_form.css" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/tables/static/favicon.ico" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/tables/static/js/bootstrap.bundle.min.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/tables/static/js/jquery-3.7.1.min.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/tables/static/js/row_edit_modal.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/tables/static/webfonts/fa-solid-900.woff2" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/tables/tables.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/tables/templates/registration/login.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/tables/templates/tables/add_column/add_column.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/tables/templates/tables/add_row/add_row.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/tables/templates/tables/add_row/unlock_row.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/tables/templates/tables/create_table.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/tables/templates/tables/export/export_table.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/tables/templates/tables/manage_admins.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/tables/templates/tables/manage_permissions.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/tables/templates/tables/manage_table_permissions.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/tables/templates/tables/row_edit_form/row_edit_form.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/tables/templates/tables/shared_table.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/tables/templates/tables/shared_tables_list.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/tables/templates/tables/table_detail.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/tables/templates/tables/table_list.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/tables/tests.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/tables/urls.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/tables/views.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/table_service/templates/base.html" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -33,6 +192,11 @@
     </option>
   </component>
   <component name="Git.Settings">
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="a576ea711e232ce1732cd9cd5313967f9025eb1b" />
+      </map>
+    </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="GitHubPullRequestSearchHistory">{
@@ -41,12 +205,12 @@
     &quot;assignee&quot;: &quot;NickPYTH&quot;
   }
 }</component>
-  <component name="GithubPullRequestsUISettings">{
-  &quot;selectedUrlAndAccountId&quot;: {
-    &quot;url&quot;: &quot;https://github.com/NickPYTH/table_service.git&quot;,
-    &quot;accountId&quot;: &quot;66e0b1f2-24e1-49c2-9ecb-57fdd761dd51&quot;
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/NickPYTH/table_service.git",
+    "accountId": "1177fe0f-0c5f-478c-ab82-3900c614be89"
   }
-}</component>
+}]]></component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 4
 }</component>
@@ -62,14 +226,13 @@
   &quot;keyToString&quot;: {
     &quot;ASKED_SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
     &quot;Django Server.table_service.executor&quot;: &quot;Debug&quot;,
-    &quot;Docker.docker-compose.yml.db: Compose Deployment.executor&quot;: &quot;Run&quot;,
     &quot;Docker.docker-compose.yml: Compose Deployment.executor&quot;: &quot;Run&quot;,
     &quot;RunOnceActivity.OpenDjangoStructureViewOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.pycharm.django.structure.promotion.once.per.project&quot;: &quot;true&quot;,
     &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
-    &quot;database.data.extractors.current.export.id&quot;: &quot;Comma-separated (CSV)_id&quot;,
     &quot;git-widget-placeholder&quot;: &quot;snv&quot;,
     &quot;last_opened_file_path&quot;: &quot;/Users/nick/PycharmProjects/table_service&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
@@ -77,7 +240,7 @@
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
     &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
     &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;com.intellij.python.django.customization.DjangoModulesConfigurable&quot;,
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   },
   &quot;keyToStringList&quot;: {
@@ -91,10 +254,10 @@
       <recent name="$PROJECT_DIR$" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
-      <recent name="$PROJECT_DIR$/table_service/table_service" />
+      <recent name="$PROJECT_DIR$/backend" />
     </key>
   </component>
-  <component name="RunManager" selected="Django Server.table_service">
+  <component name="RunManager">
     <configuration name="table_service" type="Python.DjangoServer" factoryName="Django server">
       <module name="table_service" />
       <option name="ENV_FILES" value="" />
@@ -106,7 +269,7 @@
       </envs>
       <option name="SDK_HOME" value="" />
       <option name="SDK_NAME" value="Python 3.13 (table_service)" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/table_service" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/backend/table_service" />
       <option name="IS_MODULE_SDK" value="false" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
@@ -127,31 +290,12 @@
       </deployment>
       <method v="2" />
     </configuration>
-    <configuration name="docker-compose.yml.db: Compose Deployment" type="docker-deploy" factoryName="docker-compose.yml" temporary="true" server-name="Docker">
-      <deployment type="docker-compose.yml">
-        <settings>
-          <option name="envFilePath" value="" />
-          <option name="services">
-            <list>
-              <option value="db" />
-            </list>
-          </option>
-          <option name="sourceFilePath" value="docker-compose.yml" />
-        </settings>
-      </deployment>
-      <method v="2" />
-    </configuration>
-    <recent_temporary>
-      <list>
-        <item itemvalue="Docker.docker-compose.yml.db: Compose Deployment" />
-      </list>
-    </recent_temporary>
   </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-js-predefined-d6986cc7102b-1632447f56bf-JavaScript-PY-243.26053.29" />
-        <option value="bundled-python-sdk-b1dbf8ef85a6-4df51de95216-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-243.26053.29" />
+        <option value="bundled-js-predefined-d6986cc7102b-e03c56caf84a-JavaScript-PY-252.23892.515" />
+        <option value="bundled-python-sdk-7e47963ff851-f0eec537fc84-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-252.23892.515" />
       </set>
     </attachedChunks>
   </component>
@@ -167,10 +311,9 @@
       <workItem from="1754542581363" duration="4248000" />
       <workItem from="1754550054894" duration="465000" />
       <workItem from="1754552918635" duration="2289000" />
-      <workItem from="1754730594811" duration="1321000" />
-      <workItem from="1754759137852" duration="7329000" />
-      <workItem from="1754810659444" duration="35261000" />
-      <workItem from="1754995855504" duration="60000" />
+      <workItem from="1755492467070" duration="14360000" />
+      <workItem from="1755572729808" duration="11006000" />
+      <workItem from="1755659165453" duration="1607000" />
     </task>
     <task id="LOCAL-00001" summary="Создано приложение api&#10;Обновлены настройки подключения к БД">
       <option name="closed" value="true" />
@@ -180,39 +323,15 @@
       <option name="project" value="LOCAL" />
       <updated>1754545444511</updated>
     </task>
-    <task id="LOCAL-00002" summary="cors">
+    <task id="LOCAL-00002" summary="WS для блокировок">
       <option name="closed" value="true" />
-      <created>1754569166223</created>
+      <created>1755496157171</created>
       <option name="number" value="00002" />
       <option name="presentableId" value="LOCAL-00002" />
       <option name="project" value="LOCAL" />
-      <updated>1754569166223</updated>
+      <updated>1755496157171</updated>
     </task>
-    <task id="LOCAL-00003" summary="Добавлена библиотека и настройка для работы с веб-сокетами">
-      <option name="closed" value="true" />
-      <created>1754967409032</created>
-      <option name="number" value="00003" />
-      <option name="presentableId" value="LOCAL-00003" />
-      <option name="project" value="LOCAL" />
-      <updated>1754967409032</updated>
-    </task>
-    <task id="LOCAL-00004" summary="Добавлено уведомление пользователя об изменении сущности Table через WS">
-      <option name="closed" value="true" />
-      <created>1754974224101</created>
-      <option name="number" value="00004" />
-      <option name="presentableId" value="LOCAL-00004" />
-      <option name="project" value="LOCAL" />
-      <updated>1754974224101</updated>
-    </task>
-    <task id="LOCAL-00005" summary="Передаются данные об измененной сущность таблицы">
-      <option name="closed" value="true" />
-      <created>1754975719412</created>
-      <option name="number" value="00005" />
-      <option name="presentableId" value="LOCAL-00005" />
-      <option name="project" value="LOCAL" />
-      <updated>1754975719412</updated>
-    </task>
-    <option name="localTasksCounter" value="6" />
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -234,10 +353,7 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Создано приложение api&#10;Обновлены настройки подключения к БД" />
-    <MESSAGE value="cors" />
-    <MESSAGE value="Добавлена библиотека и настройка для работы с веб-сокетами" />
-    <MESSAGE value="Добавлено уведомление пользователя об изменении сущности Table через WS" />
-    <MESSAGE value="Передаются данные об измененной сущность таблицы" />
-    <option name="LAST_COMMIT_MESSAGE" value="Передаются данные об измененной сущность таблицы" />
+    <MESSAGE value="WS для блокировок" />
+    <option name="LAST_COMMIT_MESSAGE" value="WS для блокировок" />
   </component>
 </project>

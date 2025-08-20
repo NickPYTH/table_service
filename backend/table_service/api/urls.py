@@ -29,9 +29,9 @@ router.register(r'rowpermissions', views.RowPermissionViewSet, basename='row-per
 
 router.register(r'rowfilialpermissions', views.RowFilialPermissionViewSet, basename='rowfilialpermissions')
 
-router.register(r'file',views.FileUploadViewSet, basename='file')
+router.register(r'file', views.FileUploadViewSet, basename='file')
 
-router.register(r'rowfile',views.RowUploadViewSet, basename='rowfile')
+router.register(r'rowfile', views.RowUploadViewSet, basename='rowfile')
 
 urlpatterns = [
     path('', include(router.urls)),

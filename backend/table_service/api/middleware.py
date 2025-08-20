@@ -7,6 +7,7 @@ class RemoteUserMiddleware(MiddlewareMixin):
     def process_request(self, request):
         pass
 
+
 class WebSocketRemoteUserMiddleware(BaseMiddleware):
     async def __call__(self, scope, receive, send):
         # Ленивый импорт User, чтобы избежать AppRegistryNotReady
@@ -33,3 +34,8 @@ class WebSocketRemoteUserMiddleware(BaseMiddleware):
             scope["user"] = AnonymousUser()
 
         return await super().__call__(scope, receive, send)
+
+
+class RemoteUserMiddleware(MiddlewareMixin):
+    def process_request(self, request):
+        pass

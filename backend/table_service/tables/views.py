@@ -38,7 +38,7 @@ def table_list(request):
         tables = Table.objects.all()
     else:
         tables = Table.objects.filter(owner=request.user)
-    return render(request, 'tables/table_list.html', {'tables': tables})
+    return render(request, 'tables/templates/tables/table_list.html', {'tables': tables})
 
 
 @login_required
@@ -72,7 +72,7 @@ def create_table(request):
             return redirect('table_detail', pk=table.pk)
     else:
         form = TableForm()
-    return render(request, 'tables/create_table.html', {'form': form})
+    return render(request, 'tables/templates/tables/create_table.html', {'form': form})
 
 
 @login_required
@@ -108,7 +108,7 @@ def add_column(request, pk):
             return redirect('table_detail', pk=table.pk)
     else:
         form = ColumnForm()
-    return render(request, 'tables/add_column/add_column.html', {'form': form, 'table': table})
+    return render(request, 'tables/add_column/templates/tables/add_column/add_column.html', {'form': form, 'table': table})
 
 
 @login_required
@@ -132,7 +132,7 @@ def manage_admins(request):
     current_admins = Admin.objects.all()
     available_users = User.objects.all()
 
-    return render(request, 'tables/manage_admins.html', {
+    return render(request, 'tables/templates/tables/manage_admins.html', {
         'current_admins': current_admins,
         'available_users': available_users,
         'is_admin': Admin.objects.filter(user=request.user)
@@ -239,7 +239,7 @@ def manage_row_permissions(request, table_pk, row_pk):
     all_users = User.objects.exclude(pk=table.owner.pk)
     all_filials = Filial.objects.exclude(id=1910)
 
-    return render(request, 'tables/manage_permissions.html', {
+    return render(request, 'tables/templates/tables/manage_permissions.html', {
         'table': table,
         'row': row,
         'permissions': permissions,
@@ -340,7 +340,7 @@ def manage_table_permissions(request, table_pk):
     all_users = User.objects.exclude(pk=table.owner.pk)
     all_filials = Filial.objects.exclude(id=1910)
 
-    return render(request, 'tables/manage_table_permissions.html', {
+    return render(request, 'tables/templates/tables/manage_table_permissions.html', {
         'table': table,
         'permissions': permissions,
         'filial_permissions': filial_permissions,
@@ -478,7 +478,7 @@ def edit_row(request, table_pk, row_pk):
 
     # GET запрос - возвращаем форму
     form = RowEditForm(row=row)
-    html = render_to_string('tables/row_edit_form/row_edit_form.html', {
+    html = render_to_string('tables/row_edit_form/templates/tables/row_edit_form/row_edit_form.html', {
         'form': form,
         'table': table,
         'row': row
@@ -569,7 +569,7 @@ def add_row(request, pk):
 
     # GET запрос - возвращаем форму
     form = AddRowForm(table=table)
-    html = render_to_string('tables/add_row/add_row.html', {
+    html = render_to_string('tables/add_row/templates/tables/add_row/add_row.html', {
         'form': form,
         'table': table  # Передаем сам объект таблицы
     }, request=request)
@@ -608,7 +608,7 @@ def shared_tables_list(request):
             'shared_by': table.owner.username
         })
 
-    return render(request, 'tables/shared_tables_list.html', {
+    return render(request, 'tables/templates/tables/shared_tables_list.html', {
         'tables': tables_with_access
     })
 
@@ -642,7 +642,7 @@ def table_detail(request, pk):
 
     table = DynamicTable(data=queryset, table_obj=table_obj, request=request)
     RequestConfig(request).configure(table)
-    return render(request, 'tables/table_detail.html', {
+    return render(request, 'tables/templates/tables/table_detail.html', {
         'table_obj': table_obj,
         'table': table,
         'is_admin': table_obj.is_admin(request.user),
@@ -666,7 +666,7 @@ def shared_table_view(request, share_token):
     table_view = DynamicTable(data=queryset, table_obj=table, request=request)
     RequestConfig(request).configure(table_view)
 
-    return render(request, 'tables/shared_table.html', {
+    return render(request, 'tables/templates/tables/shared_table.html', {
         'table_obj': table,
         'table': table_view,
         'is_owner': table.owner == request.user,
@@ -716,7 +716,7 @@ def unlock_filial_table(request, table_pk):
 
     filial_permissions = table.filial_add_permissions.all()
 
-    return render(request, 'tables/add_row/unlock_row.html', {
+    return render(request, 'tables/add_row/templates/tables/add_row/unlock_row.html', {
         'table_obj': table,
         'filial_permissions': filial_permissions,
     })
@@ -740,7 +740,7 @@ def export_table(request, table_pk):
         exporter = TableExport(export_format, table)
         return exporter.response(f"table.{export_format}")
 
-    return render(request, "tables/export/export_table.html", {
+    return render(request, "tables/export/templates/tables/export/export_table.html", {
         "table": table
     })
 

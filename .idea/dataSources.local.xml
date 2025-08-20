@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="dataSourceStorageLocal" created-in="PY-243.26053.29">
+  <component name="dataSourceStorageLocal" created-in="PY-252.23892.515">
     <data-source name="default_db@194.87.84.236" uuid="b4e9259d-1287-4244-8643-2f63c7c13c11">
       <database-info product="PostgreSQL" version="15.3 (Ubuntu 15.3-1.pgdg20.04+1)" jdbc-version="4.2" driver-name="PostgreSQL JDBC Driver" driver-version="42.7.3" dbms="POSTGRES" exact-version="15.3" exact-driver-version="42.7">
         <identifier-quote-string>&quot;</identifier-quote-string>
@@ -42,7 +42,7 @@
       </schema-mapping>
     </data-source>
     <data-source name="postgres@localhost" uuid="43cd9258-40d6-4750-a949-0c964290a945">
-      <database-info product="PostgreSQL" version="15.13 (Homebrew)" jdbc-version="4.2" driver-name="PostgreSQL JDBC Driver" driver-version="42.7.3" dbms="POSTGRES" exact-version="15.13" exact-driver-version="42.7">
+      <database-info product="PostgreSQL" version="15.14 (Postgres.app)" jdbc-version="4.2" driver-name="PostgreSQL JDBC Driver" driver-version="42.7.3" dbms="POSTGRES" exact-version="15.14" exact-driver-version="42.7">
         <identifier-quote-string>&quot;</identifier-quote-string>
       </database-info>
       <case-sensitivity plain-identifiers="lower" quoted-identifiers="exact" />
