@@ -1,23 +1,22 @@
-import io
 from datetime import date, datetime
-from pickle import FALSE
+from io import BytesIO
 
+import pandas as pd
+from django.http import HttpResponse
 from django.db import transaction
 from django.db.models.aggregates import Max
 from django.utils.safestring import mark_safe
-from openpyxl.styles import Font
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.generics import get_object_or_404
 from rest_framework.renderers import BrowsableAPIRenderer
 from asgiref.sync import sync_to_async
-from rest_framework.response import Response
 
-from api.utils import send_table_create, send_cell_lock_remove
+from api.utils import send_table_create
 from tables.models import TablePermission, TableFilialPermission, Profile, RowPermission, RowFilialPermission, Table, \
     Row, Cell, Column, CellLock, User
 
 import openpyxl
-from io import BytesIO
+
 
 def get_table_ids_permissions(user):
     #TODO УДАЛИТЬ НАХУЙ CAN_VIEW
@@ -296,59 +295,47 @@ def get_user(user_id):
     user = User.objects.get(id=user_id)
     return user
 
-def export_to_xlsx(self, table_obj):
-    # Создаем новую книгу Excel
-    wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = table_obj.title[:31]  # Ограничение длины названия листа в Excel
 
-    # Получаем данные таблицы
-    columns = table_obj.columns.all().order_by('order')
-    rows = table_obj.rows.all().order_by('order')
+def export_table(request, table_id, format_type):
+    table = get_object_or_404(Table, pk=table_id)
 
-    # Заголовки столбцов
-    headers = [column.name for column in columns]
-    ws.append(headers)
+    # Проверка прав тут надо подумать
+    # if not request.user == table.owner:
+    #     return HttpResponse('Forbidden', status=403)
 
-    # Стиль для заголовков
-    for cell in ws[1]:
-        cell.font = Font(bold=True)
 
-    # Данные ячеек
+    columns = table.columns.all().order_by('order')
+    rows = table.rows.all().order_by('order').prefetch_related('cells')
+
+
+    data = {col.name: [] for col in columns}
     for row in rows:
-        row_data = []
-        for column in columns:
-            cell = row.cells.filter(column=column).first()
-            if cell:
-                # Получаем значение в зависимости от типа данных
-                if column.data_type == Column.ColumnType.TEXT:
-                    row_data.append(cell.text_value)
-                elif column.data_type == Column.ColumnType.INTEGER:
-                    row_data.append(cell.integer_value)
-                elif column.data_type == Column.ColumnType.FLOAT:
-                    row_data.append(cell.float_value)
-                elif column.data_type == Column.ColumnType.BOOLEAN:
-                    row_data.append(cell.boolean_value)
-                elif column.data_type == Column.ColumnType.DATE:
-                    row_data.append(cell.date_value.strftime('%Y-%m-%d') if cell.date_value else None)
-            else:
-                row_data.append(None)
-        ws.append(row_data)
+        cells_dict = {cell.column_id: cell for cell in row.cells.all()}
+        for col in columns:
+            cell = cells_dict.get(col.id)
+            value = getattr(cell, f'{col.data_type}_value', None) if cell else None
+            data[col.name].append(value)
 
-    # Сохраняем в буфер
-    buffer = io.BytesIO()
-    wb.save(buffer)
-    buffer.seek(0)
+    df = pd.DataFrame(data)
+    filename = 'unknown'
+    if format_type == 'csv':
+        response = HttpResponse(df.to_csv(index=False), content_type='text/csv')
+        filename = f"{table.title}.csv"
 
-    # Формируем имя файла
-    filename = f"{table_obj.title}_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+    elif format_type == 'xls':
+        buffer = BytesIO()
+        df.to_excel(buffer, index=False, engine='xlwt')
+        response = HttpResponse(buffer.getvalue(), content_type='application/vnd.ms-excel')
+        filename = f"{table.title}.xls"
 
-    return Response(
-        buffer.getvalue(),
-        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        headers={'Content-Disposition': f'attachment; filename="{filename}"'}
-    )
+    elif format_type == 'xlsx':
+        buffer = BytesIO()
+        df.to_excel(buffer, index=False, engine='openpyxl')
+        response = HttpResponse(buffer.getvalue(),
+                                content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        filename = f"{table.title}.xlsx"
 
-
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return response
 
 
