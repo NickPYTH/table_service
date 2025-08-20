@@ -2,9 +2,9 @@ services:
   app:
     build:
         context: ./backend
-        #image: backend_sif:latest
-    volumes:
-      - .:/app      # Монтируем локальные файлы
+    #image: table-service-api:latest
+    #volumes:
+    #  - .:/app      # Монтируем локальные файлы
     expose:
       - "8000"      # Чтобы Nginx мог общаться с приложением
     ports:

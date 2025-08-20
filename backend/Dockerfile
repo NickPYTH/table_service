@@ -1,13 +1,10 @@
-FROM python:3.13
-#FROM table_service-app:latest
-ENV PYTHONUNBUFFERED 1
-
-RUN mkdir /app
+#FROM python:3.13
+#ENV PYTHONUNBUFFERED 1
+FROM table-service-app-base313:latest
+#RUN mkdir /app
 WORKDIR /app
-COPY table_service/requirements.txt /app/
-RUN pip install --upgrade pip && pip install -r requirements.txt
-ADD .. /app/
-WORKDIR /app/table_service/
-RUN chmod +x run.sh
+#COPY table_service/requirements.txt .
+#RUN pip install --upgrade pip && pip install -r requirements.txt
+ADD table_service .
 
-ENTRYPOINT ["/app/table_service/run.sh"]
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
