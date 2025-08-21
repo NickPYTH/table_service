@@ -17,7 +17,7 @@ from rest_framework.permissions import IsAuthenticated
 from tables.models import Filial, Department, Employee, Profile, Admin, Table, Cell, Column, Row, RowPermission, \
     TablePermission, TableFilialPermission, RowFilialPermission, CellLock
 from tables.tables import ExportTable
-from .helper import get_table_ids_permissions, get_row_ids_permissions, FileUploadBrowsableRenderer, import_table, import_to_existing_table, export_to_xlsx
+from .helper import get_table_ids_permissions, get_row_ids_permissions, FileUploadBrowsableRenderer, import_table, import_to_existing_table, export_table
 from .serializers import (
     UserSerializer,
     FilialSerializer,
@@ -175,13 +175,13 @@ class TableDetailViewSet(viewsets.ModelViewSet):
         except:
             return Response({"success": False})
 
+    @action(detail=True, methods=['get'], url_path='export/(?P<format_type>[a-z]+)')
+    def export(self, request, pk=None, format_type='xlsx'):
+        if format_type not in ['csv', 'xls', 'xlsx']:
+            return Response({'error': 'Invalid format'}, status=400)
 
-    @action(detail=True, methods=['get'], url_path='export')
-    def export_table(self, request, pk=None):
-        table_obj = get_object_or_404(Table, pk=pk)
-        format_type = request.query_params.get('format', 'xlsx').lower()
-        if format_type == 'xlsx':
-            return export_to_xlsx(self,table_obj)
+        response = export_table(request, pk, format_type)
+        return response
 
 
 
