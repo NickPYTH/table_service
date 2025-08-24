@@ -1,22 +1,25 @@
+import io
 from datetime import date, datetime
-from io import BytesIO
+from pickle import FALSE
 
 import pandas as pd
-from django.http import HttpResponse
 from django.db import transaction
 from django.db.models.aggregates import Max
+from django.http import HttpResponse
 from django.utils.safestring import mark_safe
+from openpyxl.styles import Font
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.generics import get_object_or_404
 from rest_framework.renderers import BrowsableAPIRenderer
 from asgiref.sync import sync_to_async
+from rest_framework.response import Response
 
-from api.utils import send_table_create
+from api.utils import send_table_create, send_cell_lock_remove
 from tables.models import TablePermission, TableFilialPermission, Profile, RowPermission, RowFilialPermission, Table, \
     Row, Cell, Column, CellLock, User
 
 import openpyxl
-
+from io import BytesIO
 
 def get_table_ids_permissions(user):
     #TODO УДАЛИТЬ НАХУЙ CAN_VIEW
@@ -295,7 +298,6 @@ def get_user(user_id):
     user = User.objects.get(id=user_id)
     return user
 
-
 def export_table(request, table_id, format_type):
     table = get_object_or_404(Table, pk=table_id)
 
@@ -337,5 +339,6 @@ def export_table(request, table_id, format_type):
 
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
     return response
+
 
 
