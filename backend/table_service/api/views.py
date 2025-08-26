@@ -2,21 +2,17 @@ import os
 from io import BytesIO
 
 from django.contrib.auth.models import User
-from django.http import HttpResponseForbidden
-from django.shortcuts import render
-from django_tables2 import RequestConfig
-from django_tables2.export import TableExport
-from markdown.extensions.extra import extensions
 from rest_framework import viewsets, generics, status
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from tables.models import Filial, Department, Employee, Profile, Admin, Table, Cell, Column, Row, RowPermission, \
     TablePermission, TableFilialPermission, RowFilialPermission, CellLock
-from tables.tables import ExportTable
+
 from .helper import get_table_ids_permissions, get_row_ids_permissions, FileUploadBrowsableRenderer, import_table, import_to_existing_table, export_table
 from .serializers import (
     UserSerializer,
@@ -31,6 +27,15 @@ from .serializers import (
     RowFilialPermissionSerializer
 )
 from .utils import send_table_update, send_cell_update
+
+
+class CellPagination(PageNumberPagination):
+    page_size = 5
+    page_size_query_param = 'limit'
+    max_page_size = 10000
+
+    def paginate_queryset(self, queryset, request, view=None):
+        return super().paginate_queryset(queryset, request, view)
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -144,31 +149,28 @@ class TableListViewSet(viewsets.ModelViewSet):
 
 class TableDetailViewSet(viewsets.ModelViewSet):
     serializer_class = TableDetailSerializer
-    queryset = Table.objects.all().prefetch_related(
-            'rows__cells',
-            'rows__cells__column',
-        )
+    queryset = Table.objects.all()
 
     @action(detail=True, methods=['get'], url_path='locks')
     def cell_lock(self, request, pk=None):
         columns_ids = Column.objects.filter(table_id=pk).values_list('id', flat=True)
-        cells_ids = Cell.objects.filter(column_id__in=columns_ids).values_list('id', flat=True)
+        cells_ids = Cell.objects.filter(column__in=columns_ids).values_list('id', flat=True)
         cells_lock = CellLock.objects.filter(cell_id__in=cells_ids).select_related('cell')
         locks = [{'cell_id':lock.cell_id,'user_id':lock.user_id} for lock in cells_lock]
-        return Response(locks)
+        return Response(None)
 
     @action(detail=True, methods=['get'], url_path='not_locked')
     def not_locked(self, request, pk=None):
         columns_ids = Column.objects.filter(table_id=pk).values_list('id', flat=True)
-        cells_ids = Cell.objects.filter(column_id__in=columns_ids).values_list('id', flat=True)
+        cells_ids = Cell.objects.filter(column__in=columns_ids).values_list('id', flat=True)
         cells_locked = CellLock.objects.filter(cell_id__in=cells_ids).select_related('cell').values_list('cell_id','user_id', flat=True)
         cells_not_locked = set(cells_ids) - set(cells_locked)
         return Response(cells_not_locked)
 
     @action(detail=True, methods=['get'], url_path='remove_locks')
-    def remove_all_locks(self, request, pk=None):
+    def remove_locks(self, request, pk=None):
         columns_ids = Column.objects.filter(table_id=pk).values_list('id', flat=True)
-        cells_ids = Cell.objects.filter(column_id__in=columns_ids).values_list('id', flat=True)
+        cells_ids = Cell.objects.filter(column__in=columns_ids).values_list('id', flat=True)
         try:
             CellLock.objects.filter(cell_id__in=cells_ids).delete()
             return Response({"success": True})
@@ -182,8 +184,6 @@ class TableDetailViewSet(viewsets.ModelViewSet):
 
         response = export_table(request, pk, format_type)
         return response
-
-
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -204,13 +204,23 @@ class TableDetailViewSet(viewsets.ModelViewSet):
 
 
 class CellViewSet(viewsets.ModelViewSet):
-    queryset = Cell.objects.all()
+    queryset = Cell.objects.all().order_by('id')
     serializer_class = CellSerializer
+    pagination_class = CellPagination
 
     def perform_update(self, serializer):
         instance = serializer.save()
         send_cell_update(instance)
         return instance
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        table_id = self.request.query_params.get('table')
+        if table_id:
+            queryset = queryset.filter(table_id=table_id)
+        else:
+            queryset.none()
+        return queryset
 
 class ColumnViewSet(viewsets.ModelViewSet):
     queryset = Column.objects.all()
@@ -218,7 +228,7 @@ class ColumnViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        table_id = self.request.query_params.get('table_id')
+        table_id = self.request.query_params.get('table')
         if table_id:
             queryset = queryset.filter(table_id=table_id)
         return queryset

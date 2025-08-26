@@ -1,25 +1,22 @@
-import io
 from datetime import date, datetime
-from pickle import FALSE
+from io import BytesIO
 
 import pandas as pd
+from django.http import HttpResponse
 from django.db import transaction
 from django.db.models.aggregates import Max
-from django.http import HttpResponse
 from django.utils.safestring import mark_safe
-from openpyxl.styles import Font
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.generics import get_object_or_404
 from rest_framework.renderers import BrowsableAPIRenderer
 from asgiref.sync import sync_to_async
-from rest_framework.response import Response
 
-from api.utils import send_table_create, send_cell_lock_remove
+from api.utils import send_table_create
 from tables.models import TablePermission, TableFilialPermission, Profile, RowPermission, RowFilialPermission, Table, \
     Row, Cell, Column, CellLock, User
 
 import openpyxl
-from io import BytesIO
+
 
 def get_table_ids_permissions(user):
     #TODO УДАЛИТЬ НАХУЙ CAN_VIEW
@@ -100,23 +97,11 @@ def determine_column_types(rows_sample):
 
     return column_types
 
-def prepare_cell(row, column, value):
-    """Создает объект Cell с правильным полем в зависимости от типа колонки"""
+def prepare_cell(row, column, table, value):
     if value is None:
         return None
 
-    cell = Cell(row=row, column=column)
-
-    if column.data_type == Column.ColumnType.TEXT:
-        cell.text_value = str(value)
-    elif column.data_type == Column.ColumnType.INTEGER:
-        cell.integer_value = int(value) if value is not None else None
-    elif column.data_type == Column.ColumnType.FLOAT:
-        cell.float_value = float(value) if value is not None else None
-    elif column.data_type == Column.ColumnType.BOOLEAN:
-        cell.boolean_value = bool(value)
-    elif column.data_type == Column.ColumnType.DATE:
-        cell.date_value = value if isinstance(value, date) else None
+    cell = Cell(row=row.id, column=column.id,table_id=table.id, value=value)
 
     return cell
 
@@ -187,7 +172,7 @@ def import_table(file, name, user):
                     )
                 )
                 for column, value in zip(columns, row_values):
-                    cell = prepare_cell(row_obj, column, value)
+                    cell = prepare_cell(row_obj, column,table, value)
                     if cell:
                         cells.append(cell)
 
@@ -254,7 +239,7 @@ def import_to_existing_table(file, table_id, user):
                 )
 
                 for column, value in zip(existing_columns, row_values):
-                    cell = prepare_cell(row_obj, column, value)
+                    cell = prepare_cell(row_obj, column,table, value)
                     if cell:
                         cells.append(cell)
 
@@ -298,6 +283,7 @@ def get_user(user_id):
     user = User.objects.get(id=user_id)
     return user
 
+
 def export_table(request, table_id, format_type):
     table = get_object_or_404(Table, pk=table_id)
 
@@ -312,7 +298,7 @@ def export_table(request, table_id, format_type):
 
     data = {col.name: [] for col in columns}
     for row in rows:
-        cells_dict = {cell.column_id: cell for cell in row.cells.all()}
+        cells_dict = {cell.column: cell for cell in row.cells.all()}
         for col in columns:
             cell = cells_dict.get(col.id)
             value = getattr(cell, f'{col.data_type}_value', None) if cell else None
@@ -339,6 +325,5 @@ def export_table(request, table_id, format_type):
 
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
     return response
-
 
 

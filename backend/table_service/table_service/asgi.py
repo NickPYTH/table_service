@@ -1,4 +1,5 @@
 import os
+
 from django.core.asgi import get_asgi_application
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'table_service.settings')
@@ -19,9 +20,9 @@ application = ProtocolTypeRouter({
     "websocket": WebSocketRemoteUserMiddleware(
         AuthMiddlewareStack(
             URLRouter([
-                path("ws/table-updates/", TableUpdatesConsumer.as_asgi()),
-                path("ws/cell-updates/", CellUpdatesConsumer.as_asgi()),
-                path("ws/cell-lock-updates/", CellLockUpdatesConsumer.as_asgi()),
+                path("api/ws/table-updates/", TableUpdatesConsumer.as_asgi()),
+                path("api/ws/cell-updates/", CellUpdatesConsumer.as_asgi()),
+                path("api/ws/cell-lock-updates/", CellLockUpdatesConsumer.as_asgi()),
             ])
         )
     ),
