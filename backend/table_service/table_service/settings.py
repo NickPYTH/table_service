@@ -80,7 +80,7 @@ AUTHENTICATION_BACKENDS = [
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.RemoteUserAuthentication',
-    ]
+    ],
 }
 
 USE_X_FORWARDED_HOST = True

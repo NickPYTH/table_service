@@ -2,9 +2,12 @@ import os
 from io import BytesIO
 
 from django.contrib.auth.models import User
+from django.http import Http404
+from rest_framework.filters import OrderingFilter
 from rest_framework import viewsets, generics, status
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
@@ -28,6 +31,15 @@ from .serializers import (
 from .utils import send_table_update, send_cell_update
 
 
+class CellPagination(PageNumberPagination):
+    page_size = 5
+    page_size_query_param = 'limit'
+    max_page_size = 10000
+
+    def paginate_queryset(self, queryset, request, view=None):
+        return super().paginate_queryset(queryset, request, view)
+
+
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
@@ -45,7 +57,6 @@ class UserViewSet(viewsets.ModelViewSet):
             user_ids = TablePermission.objects.filter(table_id=table_id).values_list('user__id', flat=True)
             queryset = queryset.exclude(id__in=user_ids)
         return queryset
-
 
 
 class FilialViewSet(viewsets.ModelViewSet):
@@ -66,7 +77,7 @@ class FilialViewSet(viewsets.ModelViewSet):
         if table_id:
             table = get_object_or_404(Table, pk=table_id)
             if table:
-                filial_ids = Filial.objects.filter(table=table).values_list('filial__id', flat=True)
+                filial_ids = TableFilialPermission.objects.filter(table=table).values_list('filial__id', flat=True)
                 queryset = queryset.exclude(id__in=filial_ids)
             else:
                 return queryset.none()
@@ -114,14 +125,14 @@ class AdminViewSet(viewsets.ModelViewSet):
 class CurrentUserView(generics.RetrieveAPIView):
     serializer_class = UserSerializer
     # permission_classes = [permissions.IsAuthenticated]
-    def get_object(self):
-        return self.request.user
 
-# class CurrentUserView(APIView):
-#     # permission_classes = (IsAuthenticated,)
-#     def get(self, request):
-#         print(request)
-#         return JsonResponse({'user': 'kek'})
+    def get_object(self):
+        user = self.request.user
+        profile = Profile.objects.filter(user_id=user.id).prefetch_related('employee').first()
+        if profile:
+            return {"id":user.id,"username":user.username,"email":user.email,"first_name":profile.employee.firstname,"last_name":profile.employee.lastname, "second_name":profile.employee.secondname}
+        return user
+
 
 class TableListViewSet(viewsets.ModelViewSet):
     queryset = Table.objects.all()
@@ -137,17 +148,15 @@ class TableListViewSet(viewsets.ModelViewSet):
             queryset = queryset.none()
         return queryset
 
+
 class TableDetailViewSet(viewsets.ModelViewSet):
     serializer_class = TableDetailSerializer
-    queryset = Table.objects.all().prefetch_related(
-            'rows__cells',
-            'rows__cells__column',
-        )
+    queryset = Table.objects.all()
 
     @action(detail=True, methods=['get'], url_path='locks')
     def cell_lock(self, request, pk=None):
         columns_ids = Column.objects.filter(table_id=pk).values_list('id', flat=True)
-        cells_ids = Cell.objects.filter(column_id__in=columns_ids).values_list('id', flat=True)
+        cells_ids = Cell.objects.filter(column__in=columns_ids).values_list('id', flat=True)
         cells_lock = CellLock.objects.filter(cell_id__in=cells_ids).select_related('cell')
         locks = [{'cell_id':lock.cell_id,'user_id':lock.user_id} for lock in cells_lock]
         return Response(locks)
@@ -155,17 +164,18 @@ class TableDetailViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['get'], url_path='not_locked')
     def not_locked(self, request, pk=None):
         columns_ids = Column.objects.filter(table_id=pk).values_list('id', flat=True)
-        cells_ids = Cell.objects.filter(column_id__in=columns_ids).values_list('id', flat=True)
+        cells_ids = Cell.objects.filter(column__in=columns_ids).values_list('id', flat=True)
         cells_locked = CellLock.objects.filter(cell_id__in=cells_ids).select_related('cell').values_list('cell_id','user_id', flat=True)
         cells_not_locked = set(cells_ids) - set(cells_locked)
         return Response(cells_not_locked)
 
     @action(detail=True, methods=['get'], url_path='remove_locks')
-    def remove_all_locks(self, request, pk=None):
+    def remove_locks(self, request, pk=None):
+        user = self.request.user
         columns_ids = Column.objects.filter(table_id=pk).values_list('id', flat=True)
-        cells_ids = Cell.objects.filter(column_id__in=columns_ids).values_list('id', flat=True)
+        cells_ids = Cell.objects.filter(column__in=columns_ids).values_list('id', flat=True)
         try:
-            CellLock.objects.filter(cell_id__in=cells_ids).delete()
+            CellLock.objects.filter(cell_id__in=cells_ids, user=user).delete()
             return Response({"success": True})
         except:
             return Response({"success": False})
@@ -199,22 +209,48 @@ class TableDetailViewSet(viewsets.ModelViewSet):
 class CellViewSet(viewsets.ModelViewSet):
     queryset = Cell.objects.all()
     serializer_class = CellSerializer
+    pagination_class = CellPagination
+    ordering_fields = ('row',)
 
     def perform_update(self, serializer):
         instance = serializer.save()
         send_cell_update(instance)
         return instance
 
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        table_id = self.request.query_params.get('table')
+        if table_id:
+            queryset = queryset.filter(table_id=table_id).order_by('row')
+        else:
+            queryset.none()
+        return queryset
+
+
 class ColumnViewSet(viewsets.ModelViewSet):
     queryset = Column.objects.all()
     serializer_class = ColumnSerializer
+    filter_backends = (OrderingFilter,)
+    ordering_fields = ('id','name','order','data_type')
+    ordering = ('id',)
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        table_id = self.request.query_params.get('table_id')
+        table_id = self.request.query_params.get('table')
         if table_id:
             queryset = queryset.filter(table_id=table_id)
         return queryset
+
+    def destroy(self, request, *args, **kwargs):
+        try:
+            column_id = self.kwargs.get('pk')
+            instance = self.get_object()
+            instance.delete()
+            Cell.objects.filter(column=column_id).delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except Http404:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
 
 class RowDetailViewSet(viewsets.ModelViewSet):
     serializer_class = RowSerializer
@@ -231,6 +267,19 @@ class RowDetailViewSet(viewsets.ModelViewSet):
             queryset = queryset.none()
         return queryset
 
+    def destroy(self, request, *args, **kwargs):
+        row_id = self.kwargs.get('pk')
+        if not Row.objects.filter(pk=row_id).exists():
+            return Response({'error': 'Row not found'}, status=404)
+        instance = self.get_object()
+        try:
+            self.perform_destroy(instance)
+            Cell.objects.filter(row=row_id).delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except Http404:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+
 class RowListViewSet(viewsets.ModelViewSet):
     serializer_class = RowSerializer
     queryset = Row.objects.all()
@@ -246,7 +295,6 @@ class RowListViewSet(viewsets.ModelViewSet):
         if table_id and queryset:
             queryset = queryset.filter(table_id=table_id)
         return queryset
-
 
 
 class TablePermissionViewSet(viewsets.ModelViewSet):
@@ -277,7 +325,6 @@ class TableFilialPermissionViewSet(viewsets.ModelViewSet):
         if table_id:
             queryset = queryset.filter(table__id=table_id)
         return queryset
-
 
 
 class RowPermissionViewSet(viewsets.ModelViewSet):
@@ -337,6 +384,7 @@ class FileUploadViewSet(viewsets.ViewSet):
             "filename": file.name,
             "size": file.size,
         })
+
 
 class RowUploadViewSet(viewsets.ViewSet):
     parser_classes = (MultiPartParser, FormParser)

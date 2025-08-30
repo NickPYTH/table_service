@@ -31,7 +31,6 @@ def save_row_data(table, row, form):
             defaults={'value': value}
         )
 
-
 @login_required
 def table_list(request):
     if Admin.objects.filter(user=request.user).exists():

@@ -23,10 +23,10 @@ def notify_table_update():
     )
 
 class UserSerializer(serializers.ModelSerializer):
+    second_name = serializers.CharField(read_only=True)
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'first_name', 'last_name']
-
+        fields = ['id', 'username', 'email', 'first_name', 'last_name',  'second_name']
 
 
 class FilialSerializer(serializers.ModelSerializer):
@@ -85,7 +85,6 @@ class AdminSerializer(serializers.ModelSerializer):
         }
 
 
-
 class ProfileCreateUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
@@ -106,20 +105,30 @@ class ColumnSerializer(serializers.ModelSerializer):
         if len(columns) == 0:
             Row.objects.create(table=column.table, created_by=user)
         rows = column.table.rows.all()
-        cells = [Cell(row=row, column=column) for row in rows]
+        cells = [Cell(row=row.id, column=column.id, table_id=table.id) for row in rows]
         Cell.objects.bulk_create(cells)
         return column
 
+
+class CellSerializer(serializers.ModelSerializer):
+    #row = RowSerializer()
+    #column = ColumnSerializer()
+    #value = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = Cell
+        fields = ['id', 'column', 'row', 'value']
 
 
 class RowSerializer(serializers.ModelSerializer):
     created_by = UserSerializer(read_only=True)
     order = serializers.IntegerField(read_only=True)
     id = serializers.IntegerField(read_only=True)
+    cells = CellSerializer(many=True, read_only=True)
 
     class Meta:
         model = Row
-        fields = ['id', 'order', 'created_by', "table"]
+        fields = ['id', 'order', 'created_by', "table", "cells"]
 
     def create(self, validated_data):
         table = validated_data.pop('table')
@@ -128,79 +137,22 @@ class RowSerializer(serializers.ModelSerializer):
         row = Row.objects.create(table=table, created_by=owner, order=order)
         RowPermission.objects.create(user=owner, row=row)
         columns = table.columns.all()
-        cells = [Cell(row=row,column=column) for column in columns]
+        cells = [Cell(row=row.id,column=column.id, table_id=table.id) for column in columns]
         Cell.objects.bulk_create(cells)
         return row
-
-
-class CellSerializer(serializers.ModelSerializer):
-    row = RowSerializer()
-    column = ColumnSerializer()
-    value = serializers.SerializerMethodField(read_only=True)
-    write_value = serializers.CharField(write_only=True, allow_null=True, required=False)
-
-    class Meta:
-        model = Cell
-        fields = ['id', 'row', 'column', 'value','write_value']
-
-    def get_value(self, obj):
-        if obj.column.data_type == Column.ColumnType.TEXT:
-            return obj.text_value
-        elif obj.column.data_type == Column.ColumnType.INTEGER:
-            return obj.integer_value
-        elif obj.column.data_type == Column.ColumnType.FLOAT:
-            return obj.float_value
-        elif obj.column.data_type == Column.ColumnType.BOOLEAN:
-            return obj.boolean_value
-        elif obj.column.data_type == Column.ColumnType.DATE:
-            return obj.date_value.isoformat() if obj.date_value else None
-        return None
-
-    def validate(self, data):
-        write_value = data.get('write_value')
-        if write_value is not None:
-            column = self.instance.column if self.instance else data.get('column')
-            if not column:
-                raise serializers.ValidationError("Column is required")
-            try:
-                if column.data_type == Column.ColumnType.TEXT:
-                    data['text_value'] = str(write_value)
-                elif column.data_type == Column.ColumnType.INTEGER:
-                    data['integer_value'] = int(write_value)
-                elif column.data_type == Column.ColumnType.FLOAT:
-                    data['float_value'] = float(write_value)
-                elif column.data_type == Column.ColumnType.BOOLEAN:
-                    data['boolean_value'] = write_value.lower() in ['true', '1', 'yes']
-                elif column.data_type == Column.ColumnType.DATE:
-                    data['date_value'] = datetime.strptime(write_value, '%Y-%m-%d').date()
-            except (ValueError, TypeError) as e:
-                raise serializers.ValidationError(f"Invalid value for {column.data_type}: {str(e)}")
-        return data
-
-    def create(self, validated_data):
-        validated_data.pop('write_value', None)
-        return  super().create(validated_data)
-
-    def update(self, instance, validated_data):
-        validated_data.pop('write_value', None)
-        return super().update(instance, validated_data)
-
-
 
 
 class TableDetailSerializer(serializers.ModelSerializer):
     owner = UserSerializer(read_only=True)
     created_at = serializers.SerializerMethodField()
-    cells = serializers.SerializerMethodField()
     id = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Table
-        fields = ['id','title','owner','created_at','share_token', 'cells']
+        fields = ['id','title','owner','created_at','share_token']
         extra_kwargs = {
             'share_token': {'read_only': True},
             'created_at': {'read_only': True},
-            'cells': {'read_only': True},
         }
 
     def update(self, request, pk=None):
@@ -212,19 +164,6 @@ class TableDetailSerializer(serializers.ModelSerializer):
 
     def get_created_at(self, obj):
         return int(obj.created_at.timestamp()) * 1000
-
-    def get_cells(self, obj):
-        return [
-            {
-                'id':cell.id,
-                'row':RowSerializer(cell.row, read_only=True).data,
-                'column':ColumnSerializer(cell.column, read_only=True).data,
-                'value':CellSerializer().get_value(cell),
-            }
-            for cell in Cell.objects.filter(row__table=obj)
-        ]
-
-    # @action(detail=False, methods=['post'])
 
 
 class TableListSerializer(serializers.ModelSerializer):
@@ -281,8 +220,6 @@ class TableFilialPermissionsSerializer(serializers.ModelSerializer):
             return permissions
 
 
-
-
 class RowPermissionSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
     user_id = serializers.IntegerField()
@@ -325,7 +262,6 @@ class CellLockSerializer(serializers.ModelSerializer):
     class Meta:
         model = CellLock
         fields = ['id','cell','user','locked_at']
-
 
 
 class FileUploadSerializer(serializers.ModelSerializer):

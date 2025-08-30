@@ -19,7 +19,6 @@ import openpyxl
 
 
 def get_table_ids_permissions(user):
-    #TODO УДАЛИТЬ НАХУЙ CAN_VIEW
     permissions_user = set(TablePermission.objects.filter(user=user).values_list('table__id', flat=True))
     filial_id = (Profile.objects
                  .filter(user=user)
@@ -97,23 +96,11 @@ def determine_column_types(rows_sample):
 
     return column_types
 
-def prepare_cell(row, column, value):
-    """Создает объект Cell с правильным полем в зависимости от типа колонки"""
-    if value is None:
-        return None
+def prepare_cell(row, column, table, value):
+    #if value is None:
+    #    return None
 
-    cell = Cell(row=row, column=column)
-
-    if column.data_type == Column.ColumnType.TEXT:
-        cell.text_value = str(value)
-    elif column.data_type == Column.ColumnType.INTEGER:
-        cell.integer_value = int(value) if value is not None else None
-    elif column.data_type == Column.ColumnType.FLOAT:
-        cell.float_value = float(value) if value is not None else None
-    elif column.data_type == Column.ColumnType.BOOLEAN:
-        cell.boolean_value = bool(value)
-    elif column.data_type == Column.ColumnType.DATE:
-        cell.date_value = value if isinstance(value, date) else None
+    cell = Cell(row=row.id, column=column.id,table_id=table.id, value=value)
 
     return cell
 
@@ -184,7 +171,7 @@ def import_table(file, name, user):
                     )
                 )
                 for column, value in zip(columns, row_values):
-                    cell = prepare_cell(row_obj, column, value)
+                    cell = prepare_cell(row_obj, column,table, value)
                     if cell:
                         cells.append(cell)
 
@@ -251,7 +238,7 @@ def import_to_existing_table(file, table_id, user):
                 )
 
                 for column, value in zip(existing_columns, row_values):
-                    cell = prepare_cell(row_obj, column, value)
+                    cell = prepare_cell(row_obj, column,table, value)
                     if cell:
                         cells.append(cell)
 
@@ -299,23 +286,19 @@ def get_user(user_id):
 def export_table(request, table_id, format_type):
     table = get_object_or_404(Table, pk=table_id)
 
-    # Проверка прав тут надо подумать
-    # if not request.user == table.owner:
-    #     return HttpResponse('Forbidden', status=403)
-
-
     columns = table.columns.all().order_by('order')
-    rows = table.rows.all().order_by('order').prefetch_related('cells')
-
+    rows = table.rows.all().order_by('order')
 
     data = {col.name: [] for col in columns}
     for row in rows:
-        cells_dict = {cell.column_id: cell for cell in row.cells.all()}
+        cells_dict = {}
+        for cell in Cell.objects.filter(row=row.id):
+            cells_dict[cell.column] = cell
         for col in columns:
             cell = cells_dict.get(col.id)
-            value = getattr(cell, f'{col.data_type}_value', None) if cell else None
+            value = cell.value
             data[col.name].append(value)
-
+    kek = data
     df = pd.DataFrame(data)
     filename = 'unknown'
     if format_type == 'csv':

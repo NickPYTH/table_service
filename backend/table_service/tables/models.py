@@ -244,7 +244,7 @@ class Row(models.Model):
         if not hasattr(self, '_cell_values_cache'):
             cells = self.cells.select_related('column').all()
             self._cell_values_cache = {
-                cell.column_id: cell.value
+                cell.column: cell.value
                 for cell in cells
             }
         return self._cell_values_cache
@@ -307,57 +307,10 @@ class Row(models.Model):
 
 
 class Cell(models.Model):
-    row = models.ForeignKey(Row, on_delete=models.CASCADE, related_name='cells')
-    column = models.ForeignKey(Column, on_delete=models.CASCADE)
-    # Поля для разных типов данных
-    text_value = models.TextField(blank=True, null=True)
-    integer_value = models.IntegerField(blank=True, null=True)
-    float_value = models.FloatField(blank=True, null=True)
-    boolean_value = models.BooleanField(blank=True, null=True)
-    date_value = models.DateField(blank=True, null=True)
-
-    class Meta:
-        unique_together = ('row', 'column')
-
-    @staticmethod
-    def get_default_value(data_type):
-        """Возвращает значение по умолчанию для типа данных"""
-        defaults = {
-            Column.ColumnType.INTEGER: 0,
-            Column.ColumnType.FLOAT: 0.0,
-            Column.ColumnType.BOOLEAN: False,
-            Column.ColumnType.DATE: date.today(),
-            Column.ColumnType.TEXT: ''
-        }
-        return defaults.get(data_type, '')
-
-    @property
-    def value(self):
-        """Возвращает значение в зависимости от типа колонки"""
-        if self.column.data_type == Column.ColumnType.INTEGER:
-            return self.integer_value
-        elif self.column.data_type == Column.ColumnType.FLOAT:
-            return self.float_value
-        elif self.column.data_type == Column.ColumnType.BOOLEAN:
-            return self.boolean_value
-        elif self.column.data_type == Column.ColumnType.DATE:
-            return self.date_value
-        else:  # TEXT
-            return self.text_value
-
-    @value.setter
-    def value(self, val):
-        """Устанавливает значение в правильное поле"""
-        if self.column.data_type == Column.ColumnType.INTEGER:
-            self.integer_value = int(val) if val is not None else None
-        elif self.column.data_type == Column.ColumnType.FLOAT:
-            self.float_value = float(val) if val is not None else None
-        elif self.column.data_type == Column.ColumnType.BOOLEAN:
-            self.boolean_value = bool(val) if val is not None else None
-        elif self.column.data_type == Column.ColumnType.DATE:
-            self.date_value = val if val is not None else None  # Здесь val уже datetime.date
-        else:  # TEXT
-            self.text_value = str(val) if val is not None else ''
+    table_id = models.IntegerField(blank=True, null=True)
+    row = models.IntegerField(blank=True, null=True)
+    column = models.IntegerField(blank=True, null=True)
+    value = models.TextField(blank=True, null=True)
 
     class Meta:
         unique_together = ('row', 'column')
