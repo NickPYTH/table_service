@@ -20,9 +20,9 @@ application = ProtocolTypeRouter({
     "websocket": WebSocketRemoteUserMiddleware(
         AuthMiddlewareStack(
             URLRouter([
-                path("api/ws/table-updates/", TableUpdatesConsumer.as_asgi()),
-                path("api/ws/cell-updates/", CellUpdatesConsumer.as_asgi()),
-                path("api/ws/cell-lock-updates/", CellLockUpdatesConsumer.as_asgi()),
+                path("ws/table-updates/", TableUpdatesConsumer.as_asgi()),
+                path("ws/cell-updates/", CellUpdatesConsumer.as_asgi()),
+                path("ws/cell-lock-updates/", CellLockUpdatesConsumer.as_asgi()),
             ])
         )
     ),

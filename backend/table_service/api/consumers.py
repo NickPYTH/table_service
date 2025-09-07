@@ -1,12 +1,10 @@
-from channels.generic.websocket import AsyncJsonWebsocketConsumer
-from tables.models import User
+import ast
 
+from channels.generic.websocket import AsyncJsonWebsocketConsumer
 
 from api.helper import get_cell_by_id, create_cell_lock, get_cell_lock_by_cell, remove_cell_lock, get_user
 from api.utils import send_cell_lock_update, send_cell_lock_remove
-from tables.models import Cell, CellLock
-import json
-import ast
+
 
 class TableUpdatesConsumer(AsyncJsonWebsocketConsumer):
     async def connect(self):
@@ -50,6 +48,7 @@ class CellUpdatesConsumer(AsyncJsonWebsocketConsumer):
     async def receive(self, text_data):
         a = 1
 
+
 class CellLockUpdatesConsumer(AsyncJsonWebsocketConsumer):
     async def connect(self):
         await self.accept()
@@ -74,7 +73,7 @@ class CellLockUpdatesConsumer(AsyncJsonWebsocketConsumer):
 
     async def receive(self, text_data):
         # {type: "remove\create", cell_id: 123, user_id: 1}
-        data =ast.literal_eval(text_data)
+        data = ast.literal_eval(text_data)
         cell_id = data["cell_id"]
         cell = await get_cell_by_id(cell_id)
         lock_type = data['type']
@@ -85,6 +84,7 @@ class CellLockUpdatesConsumer(AsyncJsonWebsocketConsumer):
             return
 
         if lock_type == "create":
+            # Перед созданием блокировки, удаляем все другие блокировки пользователя
             cell_lock = await create_cell_lock(cell, user)
             await send_cell_lock_update(cell_lock)
         elif lock_type == "remove":

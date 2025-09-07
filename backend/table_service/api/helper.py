@@ -11,7 +11,7 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.renderers import BrowsableAPIRenderer
 from asgiref.sync import sync_to_async
 
-from api.utils import send_table_create
+from api.utils import send_table_create, send_cell_lock_remove
 from tables.models import TablePermission, TableFilialPermission, Profile, RowPermission, RowFilialPermission, Table, \
     Row, Cell, Column, CellLock, User
 
@@ -19,7 +19,6 @@ import openpyxl
 
 
 def get_table_ids_permissions(user):
-    #TODO УДАЛИТЬ НАХУЙ CAN_VIEW
     permissions_user = set(TablePermission.objects.filter(user=user).values_list('table__id', flat=True))
     filial_id = (Profile.objects
                  .filter(user=user)
@@ -32,13 +31,13 @@ def get_table_ids_permissions(user):
     return all_permissions
 
 def get_row_ids_permissions(user):
-    permissions_user = set(RowPermission.objects.filter(user=user).values_list('row_id', flat=True))
+    permissions_user = set(RowPermission.objects.filter(user=user.id).values_list('row', flat=True))
     filial_id = (Profile.objects
                  .filter(user=user)
                  .select_related('employee')
                  .values_list('employee__id_filial', flat=True)
                  .first())
-    permissions_filial = set(RowFilialPermission.objects.filter(filial__id=filial_id).values_list('row_id', flat=True))
+    permissions_filial = set(RowFilialPermission.objects.filter(filial=filial_id).values_list('row', flat=True))
     all_permissions = permissions_user | permissions_filial
     return all_permissions
 
@@ -98,8 +97,8 @@ def determine_column_types(rows_sample):
     return column_types
 
 def prepare_cell(row, column, table, value):
-    if value is None:
-        return None
+    #if value is None:
+    #    return None
 
     cell = Cell(row=row.id, column=column.id,table_id=table.id, value=value)
 
@@ -109,7 +108,7 @@ def prepare_cell(row, column, table, value):
 
 def import_table(file, name, user):
     try:
-        with transaction.atomic():  # Всё выполняется в одной транзакции
+        with transaction.atomic():
             wb = openpyxl.load_workbook(file, data_only=True)
             ws = wb.active
 
@@ -165,8 +164,9 @@ def import_table(file, name, user):
             for row_obj, row_values in zip(created_rows, rows_data[1:]):
                 row_permissions.append(
                     RowPermission(
-                        row = row_obj,
-                        user = user,
+                        row = row_obj.id,
+                        user = user.id,
+                        table = table.id,
                         can_edit=True,
                         can_delete=True
                     )
@@ -260,9 +260,11 @@ def get_cell_by_id(cell_id):
 
 @sync_to_async(thread_sensitive=False)
 def create_cell_lock(cell,user):
+    CellLock.objects.filter(user=user).delete()
     if CellLock.objects.filter(cell=cell, user=user).count() > 0:
         return CellLock.objects.filter(cell=cell, user=user)[0]
     cell_lock = CellLock.objects.create(cell=cell, user=user)
+
     return cell_lock
 
 @sync_to_async(thread_sensitive=False)
@@ -287,23 +289,19 @@ def get_user(user_id):
 def export_table(request, table_id, format_type):
     table = get_object_or_404(Table, pk=table_id)
 
-    # Проверка прав тут надо подумать
-    # if not request.user == table.owner:
-    #     return HttpResponse('Forbidden', status=403)
-
-
     columns = table.columns.all().order_by('order')
-    rows = table.rows.all().order_by('order').prefetch_related('cells')
-
+    rows = table.rows.all().order_by('order')
 
     data = {col.name: [] for col in columns}
     for row in rows:
-        cells_dict = {cell.column: cell for cell in row.cells.all()}
+        cells_dict = {}
+        for cell in Cell.objects.filter(row=row.id):
+            cells_dict[cell.column] = cell
         for col in columns:
             cell = cells_dict.get(col.id)
-            value = getattr(cell, f'{col.data_type}_value', None) if cell else None
+            value = cell.value
             data[col.name].append(value)
-
+    kek = data
     df = pd.DataFrame(data)
     filename = 'unknown'
     if format_type == 'csv':

@@ -6,7 +6,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 
 from tables.models import Filial, Employee, Department, Profile, Admin, Table, Column, Cell, Row, RowPermission, \
-    TablePermission, TableFilialPermission, RowFilialPermission, CellLock
+    TablePermission, TableFilialPermission, RowFilialPermission, CellLock, ColumnPermission, ColumnFilialPermission
 from datetime import datetime
 
 from channels.layers import get_channel_layer
@@ -22,10 +22,12 @@ def notify_table_update():
         }
     )
 
+#TODO Import table column permissions, setting table column permissions in table permissions, edit column permissions when table  edit,
 class UserSerializer(serializers.ModelSerializer):
+    second_name = serializers.CharField(read_only=True)
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'first_name', 'last_name']
+        fields = ['id', 'username', 'email', 'first_name', 'last_name',  'second_name']
 
 
 class FilialSerializer(serializers.ModelSerializer):
@@ -124,17 +126,27 @@ class RowSerializer(serializers.ModelSerializer):
     order = serializers.IntegerField(read_only=True)
     id = serializers.IntegerField(read_only=True)
     cells = CellSerializer(many=True, read_only=True)
+    cells_list = serializers.SerializerMethodField()
 
     class Meta:
         model = Row
-        fields = ['id', 'order', 'created_by', "table", "cells"]
+        fields = ['id', 'order', 'created_by', "table", "cells", "cells_list"]
+
+    def get_cells_list(self, obj):
+        cell_list = []
+        for cell in Cell.objects.filter(row=obj.id):
+            cell_list.append(CellSerializer(cell).data)
+        return cell_list
 
     def create(self, validated_data):
         table = validated_data.pop('table')
         owner = self.context['request'].user
         order = Row.objects.count()
         row = Row.objects.create(table=table, created_by=owner, order=order)
-        RowPermission.objects.create(user=owner, row=row)
+        # Накидываем права на новую строку основываясь на пользователях с правами на редактирование таблицы
+        for table_permission in TablePermission.objects.filter(table=table, can_edit=True):
+            RowPermission.objects.create(user=table_permission.user.id, row=row.id, table=table.id).save()
+        # -----
         columns = table.columns.all()
         cells = [Cell(row=row.id,column=column.id, table_id=table.id) for column in columns]
         Cell.objects.bulk_create(cells)
@@ -159,7 +171,6 @@ class TableDetailSerializer(serializers.ModelSerializer):
         table.title = pk.get('title')
         table.save()
         return table
-
 
     def get_created_at(self, obj):
         return int(obj.created_at.timestamp()) * 1000
@@ -196,13 +207,24 @@ class TablePermissionsSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
     class Meta:
         model = TablePermission
-        fields = ['id','user_id','can_view','table', 'user']
+        fields = ['id','user_id','can_view', 'can_edit', 'table', 'user']
 
     def create(self, validated_data):
         user = get_object_or_404(User,id=validated_data['user_id'])
         if user:
             permissions = TablePermission.objects.create(user=user, **validated_data)
             return permissions
+
+    def update(self, request, pk=None):
+        table_permission = TablePermission.objects.get(pk=request.id)
+        table_permission.can_edit = pk.get('can_edit')
+        table_permission.save()
+        row_permissions = []
+        for row_permission in RowPermission.objects.filter(user=request.user_id, table=request.table_id):
+            row_permission.can_edit = pk.get('can_edit')
+            row_permissions.append(row_permission)
+        RowPermission.objects.bulk_update(row_permissions, fields=['can_edit'])
+        return table_permission
 
 
 class TableFilialPermissionsSerializer(serializers.ModelSerializer):
@@ -218,22 +240,23 @@ class TableFilialPermissionsSerializer(serializers.ModelSerializer):
             permissions = TableFilialPermission.objects.create(filial=filial, **validated_data)
             return permissions
 
-
 class RowPermissionSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
-    user_id = serializers.IntegerField()
-    row_id = serializers.IntegerField()
-    user = UserSerializer(read_only=True)
+    user = serializers.IntegerField()
+    row = serializers.IntegerField()
+    table = serializers.IntegerField()
+    user_model = serializers.SerializerMethodField()
     class Meta:
         model = RowPermission
-        fields = ['id','row_id','user_id','can_edit','can_delete', 'user']
+        fields = ['id','row','user', 'table', 'can_edit', 'can_delete', 'user_model']
 
     def create(self, validated_data):
-        row = get_object_or_404(Row,id=validated_data['row_id'])
-        user = get_object_or_404(User,id=validated_data['user_id'])
-        if user and row:
-            permissions = RowPermission.objects.create(row=row, user=user, **validated_data)
-            return permissions
+        permissions = RowPermission.objects.create(row=validated_data['row'], user=validated_data['user'], table=validated_data['table'])
+        return permissions
+
+    def get_user_model(self, obj):
+        user = User.objects.get(id=obj.user)
+        return UserSerializer(user).data
 
 
 class RowFilialPermissionSerializer(serializers.ModelSerializer):
@@ -274,6 +297,48 @@ class FileUploadSerializer(serializers.ModelSerializer):
     #     fields = ['name','file']
     #     # model = File
     #     serializers.raise_errors_on_nested_writes = False
+
+
+class ColumnPermissionSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(read_only=True)
+    can_view = serializers.BooleanField(required=False)
+    can_edit = serializers.BooleanField(required=False)
+    user = UserSerializer(read_only=True)
+    user_id = serializers.IntegerField(write_only=True)
+    column = ColumnSerializer(read_only=True)
+    column_id = serializers.IntegerField(write_only=True)
+    class Meta:
+        model = ColumnPermission
+        fields = ['id','column_id','user_id','user','column','can_view','can_edit']
+
+    def create(self, validated_data):
+        column = get_object_or_404(Column,id=validated_data['column_id'])
+        user = get_object_or_404(User,id=validated_data['user_id'])
+        if user and column:
+            permissions = ColumnPermission.objects.create(column=column, user=user, **validated_data)
+            return permissions
+        return None
+
+
+class ColumnFilialPermissionSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(read_only=True)
+    can_delete = serializers.BooleanField(required=False)
+    can_edit = serializers.BooleanField(required=False)
+    filial = FilialSerializer(read_only=True)
+    filial_id = serializers.IntegerField(write_only=True)
+    column = ColumnSerializer(read_only=True)
+    column_id = serializers.IntegerField(write_only=True)
+    class Meta:
+        model = ColumnFilialPermission
+        fields = ['id','column_id','column','filial_id','filial', 'can_delete', 'can_edit']
+
+    def create(self, validated_data):
+        column = get_object_or_404(Column,id=validated_data['column_id'])
+        filial = get_object_or_404(Filial,id=validated_data['filial_id'])
+        if filial and column:
+            permissions = ColumnFilialPermission.objects.create(filial=filial, column=column, **validated_data)
+            return permissions
+        return None
 
 
 

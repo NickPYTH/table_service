@@ -1,6 +1,7 @@
 from django.contrib.auth.backends import ModelBackend
 from django.contrib.auth.models import User
 
+
 class RemoteUserBackend(ModelBackend):
     def authenticate(self, request, remote_user=None):
         if remote_user is None:
@@ -12,6 +13,7 @@ class RemoteUserBackend(ModelBackend):
                 return None
             return user
         return User.objects.get(pk=1)
+        # return None
 
     def get_user(self, user_id):
         try:
