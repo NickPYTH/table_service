@@ -13,7 +13,8 @@ from django.urls import path
 
 # Импортируем middleware ПОСЛЕ инициализации Django
 from api.middleware import WebSocketRemoteUserMiddleware
-from api.consumers import TableUpdatesConsumer, CellUpdatesConsumer, CellLockUpdatesConsumer
+from api.consumers import TableUpdatesConsumer, CellUpdatesConsumer, CellLockUpdatesConsumer, DemonConsumer
+from chat.consumers import ChatConsumer
 
 application = ProtocolTypeRouter({
     "http": django_application,
@@ -23,6 +24,8 @@ application = ProtocolTypeRouter({
                 path("ws/table-updates/", TableUpdatesConsumer.as_asgi()),
                 path("ws/cell-updates/", CellUpdatesConsumer.as_asgi()),
                 path("ws/cell-lock-updates/", CellLockUpdatesConsumer.as_asgi()),
+                path("ws/chats/", ChatConsumer.as_asgi()),
+                path("ws/demon/", DemonConsumer.as_asgi()),
             ])
         )
     ),

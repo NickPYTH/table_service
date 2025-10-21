@@ -6,8 +6,6 @@ from django.db.models.functions import Concat
 from django.urls import reverse
 from django.utils.crypto import get_random_string
 from django.db.models import IntegerField, FloatField, BooleanField, DateField, F, TextField, Value
-from datetime import date
-
 
 class Filial(models.Model):
     # id = models.IntegerField(primary_key=True)
@@ -61,6 +59,8 @@ class Table(models.Model):
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
     created_at = models.DateTimeField(default=datetime.datetime.now())
     share_token = models.CharField(max_length=32, unique=True, blank=True)
+    with_cell_confirm = models.BooleanField(default=False)
+    with_cell_logging = models.BooleanField(default=False)
 
     def save(self, *args, **kwargs):
         if not self.share_token:
@@ -123,6 +123,13 @@ class Admin(models.Model):
         verbose_name_plural = 'Администраторы сервиса'
 
 
+class SelectType(models.Model):
+    column_id = models.IntegerField(null=True, blank=True)
+    name = models.CharField(null=True, blank=True)
+    class Meta:
+        unique_together = ('column_id', 'name')
+
+
 class Column(models.Model):
     class ColumnType(models.TextChoices):
         TEXT = 'text', 'Текст'
@@ -130,6 +137,8 @@ class Column(models.Model):
         FLOAT = 'float', 'Число с плавающей точкой'
         BOOLEAN = 'boolean', 'Логическое'
         DATE = 'date', 'Дата'
+        SELECT = 'select', 'Выпадающий список'
+        AUTO_INCREMENT='auto','Автоинкремент'
 
     table = models.ForeignKey(Table, on_delete=models.CASCADE, related_name='columns')
     name = models.CharField(max_length=100)
@@ -139,6 +148,7 @@ class Column(models.Model):
         choices=ColumnType.choices,
         default=ColumnType.TEXT
     )
+    related_column_ids = models.JSONField(default=list, blank=True)
 
     class Meta:
         ordering = ['order']
@@ -312,6 +322,7 @@ class Cell(models.Model):
     column = models.IntegerField(blank=True, null=True)
     value = models.TextField(blank=True, null=True)
 
+
     class Meta:
         unique_together = ('row', 'column')
 
@@ -323,6 +334,7 @@ class TablePermission(models.Model):
     table = models.ForeignKey(Table, on_delete=models.CASCADE, related_name='permissions')
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     can_view = models.BooleanField(default=True)
+    can_edit = models.BooleanField(default=True)
 
     class Meta:
         unique_together = ('table', 'user')
@@ -338,8 +350,9 @@ class TableFilialPermission(models.Model):
 
 
 class RowPermission(models.Model):
-    row = models.ForeignKey(Row, on_delete=models.CASCADE, related_name='permissions')
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    table = models.IntegerField(blank=False)
+    row = models.IntegerField(blank=False)
+    user = models.IntegerField(blank=False)
     can_edit = models.BooleanField(default=True)
     can_delete = models.BooleanField(default=False)
 
@@ -348,8 +361,8 @@ class RowPermission(models.Model):
 
 
 class RowFilialPermission(models.Model):
-    row = models.ForeignKey(Row, on_delete=models.CASCADE, related_name='filial_permissions')
-    filial = models.ForeignKey(Filial, on_delete=models.CASCADE)
+    row = models.IntegerField(blank=False)
+    filial = models.IntegerField(blank=False)
     can_edit = models.BooleanField(default=True)
     can_delete = models.BooleanField(default=False)
 
@@ -380,7 +393,36 @@ class TableFilialLock(models.Model):
     class Meta:
         unique_together = ('table', 'filial')
 
+
+class ColumnPermission(models.Model):
+    column = models.ForeignKey(Column, on_delete=models.CASCADE, related_name='permissions')
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    can_view = models.BooleanField(default=True)
+    can_edit = models.BooleanField(default=True)
+
+    class Meta:
+        unique_together = ('column', 'user')
+
+
+class ColumnFilialPermission(models.Model):
+    column = models.ForeignKey(Column, on_delete=models.CASCADE, related_name='filial_add_permissions')
+    filial = models.ForeignKey(Filial, on_delete=models.CASCADE)
+    can_delete = models.BooleanField(default=True)
+    can_edit = models.BooleanField(default=True)
+
+    class Meta:
+        unique_together = ('column', 'filial')
+
+
 class CellLock(models.Model):
     cell = models.ForeignKey(Cell, on_delete=models.CASCADE, related_name='cells_lock_cell', unique=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='cells_lock_user')
     locked_at = models.DateTimeField(default=datetime.datetime.now())
+
+
+class CellEditLog(models.Model):
+    user_id =  models.IntegerField()
+    old_value = models.CharField(null=True)
+    new_value = models.CharField(null=True)
+    cell_id = models.IntegerField()
+    row_id = models.IntegerField(null=True)

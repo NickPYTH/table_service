@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django_bootstrap5',
     'corsheaders',
     'api.apps.ApiConfig',
+    'chat.apps.ChatConfig',
 ]
 
 

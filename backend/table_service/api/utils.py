@@ -53,7 +53,7 @@ def send_cell_update(instance=None):
             "data": {
                 "id": instance.id if instance else None,
                 "entity": serialized_data,
-                "message": "Cell list updated",
+                "message": "Cell updated",
             }
         }
     )
@@ -96,4 +96,16 @@ def send_cell_lock_remove(instance=None):
         }
     )
 
+def send_to_demon(username, path):
+    channel_layer = get_channel_layer()
 
+    async_to_sync(channel_layer.group_send)(
+        "demon",
+        {
+            "type": "send.signal",
+            "data": {
+                "username": username,
+                "path": path,
+            }
+        }
+    )
