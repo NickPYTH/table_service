@@ -1,6 +1,6 @@
-#FROM nginx_test_auth
-FROM nginx
+FROM 10.47.0.221:5000/table_service_api-nginx:v1
 
 COPY default.conf /etc/nginx/conf.d/default.conf
-COPY example.keytab /etc/example.keytab
-
+COPY prod9.keytab /etc/example.keytab
+RUN mkdir -p /etc/nginx/html
+COPY build /etc/nginx/html

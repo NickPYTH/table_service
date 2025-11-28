@@ -4,7 +4,7 @@ from . import views
 
 urlpatterns = [
     path('api/', include('api.urls')),
-    path('admin/', admin.site.urls),
+    path('api/admin/', admin.site.urls),
     path('accounts/', include('django.contrib.auth.urls')),
     path('', views.table_list, name='table_list'),
     path('create/', views.create_table, name='create_table'),

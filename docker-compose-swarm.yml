@@ -1,0 +1,16 @@
+services:
+  app:
+    image: 10.47.0.221:5000/table_service_backend:v1
+    ports:
+      - target: 8000
+        published: 8004
+    environment:
+      - KRB5_KEYTAB=./prod9.keytab
+
+  nginx:
+    image: 10.47.0.221:5000/table_service_client:v1
+    ports:
+      - target: 80
+        published: 8003
+    depends_on:
+      - app

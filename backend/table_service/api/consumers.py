@@ -4,7 +4,8 @@ from channels.generic.websocket import AsyncJsonWebsocketConsumer
 
 from api.helper import get_cell_by_id, create_cell_lock, get_cell_lock_by_cell, remove_cell_lock, get_user, \
     update_cell_by_id, reorder_columns, send_to_demon_proxy
-from api.utils import send_cell_lock_update, send_cell_lock_remove
+from api.utils import send_cell_lock_update, send_cell_lock_remove, get_user_from_session_id, register_user, \
+    un_register_user
 
 
 class TableUpdatesConsumer(AsyncJsonWebsocketConsumer):
@@ -32,11 +33,17 @@ class TableUpdatesConsumer(AsyncJsonWebsocketConsumer):
 
 class CellUpdatesConsumer(AsyncJsonWebsocketConsumer):
     async def connect(self):
+        #user = await get_user_from_session_id(self.scope.get('cookies').get('sessionid'))
+        #table_id = bytes.decode(self.scope.get('query_string')).split('=')[1]
+        #await register_user(user, table_id)
         await self.accept()
         await self.channel_layer.group_add("cell_list_updates", self.channel_name)
 
     async def disconnect(self, close_code):
         # todo remove all user locks
+        user = await get_user_from_session_id(self.scope.get('cookies').get('sessionid'))
+        table_id = bytes.decode(self.scope.get('query_string')).split('=')[1]
+        await un_register_user(user, table_id)
         await self.channel_layer.group_discard("cell_list_updates", self.channel_name)
 
     async def cell_updated(self, event):

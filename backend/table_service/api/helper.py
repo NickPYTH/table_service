@@ -12,6 +12,7 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.renderers import BrowsableAPIRenderer
 from asgiref.sync import sync_to_async
 
+from api.formulas import calculate_formula
 from api.utils import send_table_create, send_cell_lock_remove, send_cell_update, send_to_demon
 from tables.models import TablePermission, TableFilialPermission, Profile, RowPermission, RowFilialPermission, Table, \
     Row, Cell, Column, CellLock, User, ColumnFilialPermission, ColumnPermission, CellEditLog
@@ -269,10 +270,11 @@ def import_to_existing_table(file, table_id, user):
             for row_obj, row_values in zip(created_rows, rows_data[1:]):
                 row_permissions.append(
                     RowPermission(
-                        row=row_obj,
-                        user=user,
+                        row=row_obj.id,
+                        user=user.id,
                         can_edit=True,
-                        can_delete=True
+                        can_delete=True,
+                        table=table.id
                     )
                 )
 
@@ -299,15 +301,34 @@ def get_cell_by_id(cell_id):
 @sync_to_async(thread_sensitive=False)
 def update_cell_by_id(cell_id, value, user_id):
     cell = get_object_or_404(Cell, pk=cell_id)
+
     # Логируем изменения
     if cell.value != value and user_id is not None:
         cell_edit_log_record = CellEditLog(cell_id=cell_id, user_id=user_id, old_value=cell.value, new_value=value, row_id=cell.row)
         cell_edit_log_record.save()
     # -----
+
     cell.value = value
+    cell.formula_value = ''
     cell.save()
+
+    if cell.value is not None:
+        v = str(cell.value)
+        if len(v) > 0:
+            if v[0] == '=':
+                calculate_formula(cell)
+
     send_cell_update(cell)
+    recalculate_formulas(cell.table_id)
     return cell
+
+def recalculate_formulas(table_id):
+    cells_with_formulas = Cell.objects.filter(table_id=table_id, value__istartswith="=")
+    for cell in cells_with_formulas:
+        calculate_formula(cell)
+        send_cell_update(cell)
+
+
 
 @sync_to_async(thread_sensitive=False)
 def create_cell_lock(cell,user):

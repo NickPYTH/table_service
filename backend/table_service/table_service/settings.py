@@ -18,7 +18,7 @@ DB_SCHEMA = os.environ.get('DB_SCHEMA')
 DB_USER = os.environ.get('DB_USER')
 DB_PASSWORD = os.environ.get('DB_PASSWORD')
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'test-vapp-03.sgp.ru', 'sco1-vapp-04.sgp.ru', '0.0.0.0']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'test-vapp-03.sgp.ru', 'sco1-vapp-04.sgp.ru', '0.0.0.0', 'sco1-vapp-09.sgp.ru']
 
 
 # Application definition
@@ -55,11 +55,15 @@ WSGI_APPLICATION = 'table_service.wsgi.application'  # Можно оставит
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
+    'https://sco1-vapp-09.sgp.ru',
     'http://localhost:3000',
     'http://83.222.9.213:6767',
     'ws://localhost:3000',  # Добавьте WebSocket протокол
     'ws://83.222.9.213:6767',
 ]
+
+CSRF_TRUSTED_ORIGINS = ['https://sco1-vapp-09.sgp.ru']
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -104,11 +108,6 @@ TEMPLATES = [
         },
     },
 ]
-
-
-LOGIN_URL = '/accounts/login/'
-LOGIN_REDIRECT_URL = '/'  # куда перенаправлять после успешного входа
-LOGOUT_REDIRECT_URL = '/'  # куда перенаправлять после выхода
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
@@ -168,3 +167,10 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+STATIC_URL = '/api/static/'
+
+STATIC_ROOT = os.path.join(os.path.join(BASE_DIR, 'staticfiles'))
+
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static')
+]

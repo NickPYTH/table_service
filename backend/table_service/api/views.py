@@ -30,7 +30,8 @@ from .serializers import (
     ProfileCreateUpdateSerializer,
     TableListSerializer, TableDetailSerializer, CellSerializer, ColumnSerializer, RowSerializer,
     RowPermissionSerializer, TablePermissionsSerializer, TableFilialPermissionsSerializer,
-    RowFilialPermissionSerializer, SelectTypeSerializer, CellEditLogSerializer, update_auto_column
+    RowFilialPermissionSerializer, SelectTypeSerializer, CellEditLogSerializer, update_auto_column,
+    ColumnPermissionSerializer
 )
 from .utils import send_table_update, send_cell_update
 
@@ -98,12 +99,18 @@ class UserViewSet(viewsets.ModelViewSet):
         queryset = super().get_queryset()
         table_id = self.request.query_params.get('table_id', None)
         row_id = self.request.query_params.get('row_id', None)
+        column_id = self.request.query_params.get('column_id', None)
         if row_id and table_id:
             user_ids_table = TablePermission.objects.filter(table_id=table_id).values_list('user_id', flat=True)
-            user_ids_row = RowPermission.objects.filter(table_id=table_id).values_list('user__id', flat=True)
+            user_ids_row = RowPermission.objects.filter(table=table_id, row=row_id).values_list('user', flat=True)
             user_ids = set(user_ids_table).difference(set(user_ids_row))
-            queryset = queryset.filter(user__id__in=user_ids)
-        if table_id:
+            queryset = queryset.filter(id__in=user_ids)
+        elif column_id and table_id:
+            user_ids_table = TablePermission.objects.filter(table_id=table_id).values_list('user_id', flat=True)
+            user_ids_column = ColumnPermission.objects.filter(table=table_id, column=column_id).values_list('user', flat=True)
+            user_ids = set(user_ids_table).difference(set(user_ids_column))
+            queryset = queryset.filter(id__in=user_ids)
+        elif table_id:
             user_ids = TablePermission.objects.filter(table_id=table_id).values_list('user__id', flat=True)
             queryset = queryset.exclude(id__in=user_ids)
         return queryset
@@ -259,7 +266,7 @@ class TableDetailViewSet(viewsets.ModelViewSet):
                 column_permissions = []
                 row_permissions = []
                 for column_id in columns_ids:
-                    columnpermission = ColumnPermission(table_id=pk, column_id=column_id)
+                    columnpermission = ColumnPermission(table_id=pk, column=column_id)
                     column_permissions.append(columnpermission)
                 else:
                     ColumnPermission.objects.bulk_create(column_permissions, ignore_conflicts=True)
@@ -382,16 +389,16 @@ class ColumnViewSet(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         try:
             column_id = self.kwargs.get('pk')
+            table_id = Column.objects.get(pk=column_id).table.id
+            Cell.objects.filter(column=column_id).delete()
             instance = self.get_object()
             instance.delete()
-            Cell.objects.filter(column=column_id).delete()
             #Для автоинкремента
-            table_id = Column.objects.get(pk=column_id).table.id
             auto_column = Column.objects.filter(table_id=table_id, data_type='auto').first()
-            table_columns = Column.objects.filter(table_id=table_id).values('id')
+            table_columns = Column.objects.filter(table_id=table_id).values_list('id', flat=True)
             if auto_column:
                 columns_ids = set(auto_column.related_column_ids)  &  set(table_columns)
-                auto_column.related_column_ids = columns_ids
+                auto_column.related_column_ids = list(columns_ids)
                 auto_column.save()
                 update_auto_column(table_id)
             return Response(status=status.HTTP_204_NO_CONTENT)
@@ -405,6 +412,7 @@ class RowDetailViewSet(viewsets.ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         row_id = self.kwargs.get('pk')
+        table_id = Row.objects.get(pk=row_id).table.id
         if not Row.objects.filter(pk=row_id).exists():
             return Response({'error': 'Row not found'}, status=404)
         instance = self.get_object()
@@ -412,7 +420,6 @@ class RowDetailViewSet(viewsets.ModelViewSet):
             self.perform_destroy(instance)
             Cell.objects.filter(row=row_id).delete()
             #Для автоинкеремента
-            table_id = Row.objects.get(pk=row_id).table.id
             update_auto_column(table_id)
             return Response(status=status.HTTP_204_NO_CONTENT)
         except Http404:
@@ -592,11 +599,14 @@ class TablePermissionViewSet(viewsets.ModelViewSet):
             row_permission = RowPermission(row=row.id, user=user.id, table=table.id)
             row_permissions.append(row_permission)
         RowPermission.objects.bulk_create(row_permissions)
-        # RowPermission.objects.
+
         serializer.save()
 
     def perform_destroy(self, instance):
-        RowPermission.objects.filter(table=instance.table.id, user=instance.user.id).delete()
+        user_id = instance.user_id
+        table_id = instance.table.id
+        RowPermission.objects.filter(user=user_id, table=table_id).delete()
+        ColumnPermission.objects.filter(user=user_id, table=table_id).delete()
         instance.delete()
 
     def get_queryset(self):
@@ -646,6 +656,33 @@ class RowPermissionViewSet(viewsets.ModelViewSet):
             rows_ids = json.loads(rows_ids) # На что пришел запрос с клиента
             for permission in queryset:
                 if permission.row in rows_ids:
+                    if permission.can_edit:
+                        filtered_permission.append(permission)
+            return  filtered_permission
+        return queryset
+
+
+class ColumnPermissionViewSet(viewsets.ModelViewSet):
+    serializer_class = ColumnPermissionSerializer
+    queryset = ColumnPermission.objects.all()
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        user_id = self.request.query_params.get('user_id')
+        column_id = self.request.query_params.get('column_id')
+        table_id = self.request.query_params.get('table_id')
+        columns_ids = self.request.query_params.get('columns_ids')
+        if table_id:
+            queryset = queryset.filter(table=table_id)
+        if user_id:
+            queryset = queryset.filter(user=user_id)
+        if column_id:
+            queryset = queryset.filter(column=column_id)
+        if columns_ids:
+            filtered_permission = []
+            columns_ids = json.loads(columns_ids) # На что пришел запрос с клиента
+            for permission in queryset:
+                if permission.column in columns_ids:
                     if permission.can_edit:
                         filtered_permission.append(permission)
             return  filtered_permission
