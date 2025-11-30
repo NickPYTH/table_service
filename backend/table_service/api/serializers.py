@@ -80,36 +80,15 @@ def update_auto_column(table_id):
         return
 
     rows_ids = Table.objects.prefetch_related('rows').get(id=table_id).rows.all().values_list('id', flat=True)
-    Cell.objects.filter(row__in=rows_ids, column=auto_column.id).update(value="")
+    cells = Cell.objects.filter(row__in=rows_ids, column=auto_column.id)
+    cells.update(value="")
 
     if auto_column.related_number_column_id:
         update_auto_with_related_number(auto_column, rows_ids)
     else:
         update_auto_with_related_columns(auto_column, rows_ids)
 
-# def update_auto_column(table_id):
-#     auto_column = Column.objects.filter(table_id=table_id, data_type='auto').first()
-#     if auto_column:
-#         column_ids = auto_column.related_column_ids
-#         column_by_date_id = auto_column.related_number_column_id
-#         columns_dict = []
-#         rows_ids = Table.objects.prefetch_related('rows').get(id=table_id).rows.all().values_list('id', flat=True)
-#         Cell.objects.filter(row__in=rows_ids, column=auto_column.id).update(value="")
-#         if not column_by_date_id:
-#             for row_id in rows_ids:
-#                 row_value_list = []
-#                 for column_id in column_ids:
-#                     column_value = Cell.objects.filter(column=column_id, row=row_id).first().value
-#                     row_value_list.append(column_value)
-#                 columns_dict.append(tuple(row_value_list))
-#                 row_value_list.clear()
-#         unique_rows = list(set(columns_dict))
-#         for unique_row in unique_rows:
-#             indices = [x for x, item in enumerate(columns_dict) if item == unique_row]
-#             number = 1
-#             for index in indices:
-#                 Cell.objects.filter(column=auto_column.id, row=rows_ids[index]).update(value="{}".format(number))
-#                 number += 1
+    return cells
 
 def normalize_row_orders(table):
     rows = Row.objects.filter(table=table).order_by('order')

@@ -24,6 +24,8 @@ from tables.models import Cell
 
 import openpyxl
 
+from backend.table_service.api.serializers import update_auto_column
+
 
 def get_table_ids_permissions(user):
     permissions_user = set(TablePermission.objects.filter(user=user).values_list('table__id', flat=True))
@@ -320,6 +322,9 @@ def update_cell_by_id(cell_id, value, user_id):
 
     send_cell_update(cell)
     recalculate_formulas(cell.table_id)
+    cells = update_auto_column(cell.table_id)
+    for cell in cells:
+        send_cell_update(cell)
     return cell
 
 def recalculate_formulas(table_id):
