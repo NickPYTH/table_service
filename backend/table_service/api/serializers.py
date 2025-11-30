@@ -36,18 +36,20 @@ def numberToChar(num):
 
 def update_auto_with_related_number(auto_column, rows_ids):
     related_column_id = auto_column.related_number_column_id
+    default_value = int(auto_column.default_value) if auto_column.default_value and auto_column.default_value.isdigit() else 1
 
     rows_with_values = []
     for row_id in rows_ids:
         cell = Cell.objects.filter(column=related_column_id, row=row_id).first()
         current_value = cell.value if cell else None
         rows_with_values.append((row_id, current_value))
-    number = 1
+
+    number = default_value
     previous_value = None
 
     for row_id, current_value in rows_with_values:
         if current_value != previous_value:
-            number = 1
+            number = default_value
             previous_value = current_value
 
         Cell.objects.filter(column=auto_column.id, row=row_id).update(value=str(number))
@@ -56,6 +58,8 @@ def update_auto_with_related_number(auto_column, rows_ids):
 
 def update_auto_with_related_columns(auto_column, rows_ids):
     column_ids = auto_column.related_column_ids
+    default_value = int(auto_column.default_value) if auto_column.default_value and auto_column.default_value.isdigit() else 1
+
     columns_dict = []
     for row_id in rows_ids:
         row_value_list = []
@@ -68,10 +72,11 @@ def update_auto_with_related_columns(auto_column, rows_ids):
     unique_rows = list(set(columns_dict))
     for unique_row in unique_rows:
         indices = [x for x, item in enumerate(columns_dict) if item == unique_row]
-        number = 1
+        number = default_value
         for index in indices:
             Cell.objects.filter(column=auto_column.id, row=rows_ids[index]).update(value=str(number))
             number += 1
+
 
 
 def update_auto_column(table_id):
@@ -172,30 +177,43 @@ class ColumnSerializer(serializers.ModelSerializer):
     related_number_column_id = serializers.IntegerField(required=False)
     class Meta:
         model = Column
-        fields = ['id', 'name', 'order', 'data_type', "table", 'select_values', 'related_column_ids','related_number_column_id']
+        fields = ['id', 'name', 'order', 'data_type', "table", 'select_values', 'related_column_ids','related_number_column_id', 'default_value']
         extra_kwargs = {
             'id': {'required': False},
             'table': {'required': False},
             'name': {'required': False},
             'order': {'required': False},
             'data_type': {'required': False},
+            'default_value': {'required': False},
         }
 
     #Попробовать реализовать логику с автоинкрементом здесь в методе update
     def update(self, instance, validated_data):
-        if validated_data['data_type'] == 'select':
-            column_values = Cell.objects.filter(column=instance.id).exclude(value__isnull=True).exclude(value="").values_list('value', flat=True)
+        if validated_data.get('data_type') == 'select':
+            column_values = Cell.objects.filter(column=instance.id).exclude(value__isnull=True).exclude(
+                value="").values_list('value', flat=True)
             column_dict_select = []
             for column_value in column_values:
                 select_type = SelectType(column_id=instance.id, name=column_value)
                 column_dict_select.append(select_type)
             SelectType.objects.bulk_create(column_dict_select, ignore_conflicts=True)
-        elif validated_data['data_type'] == 'auto':
+        elif validated_data.get('data_type') == 'auto':
             super().update(instance, validated_data)
             table_id = Column.objects.get(id=instance.id).table.id
             update_auto_column(table_id)
         else:
+            if 'default_value' in validated_data and validated_data['default_value'] is not None:
+                table_id = instance.table.id
+                rows_ids = Table.objects.prefetch_related('rows').get(id=table_id).rows.all().values_list('id',
+                                                                                                          flat=True)
+
+                Cell.objects.filter(
+                    row__in=rows_ids,
+                    column=instance.id
+                ).update(value=str(validated_data['default_value']))
+
             SelectType.objects.filter(column_id=instance.id).delete()
+
         return super().update(instance, validated_data)
 
     def create(self, validated_data):

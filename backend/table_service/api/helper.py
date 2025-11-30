@@ -24,7 +24,7 @@ from tables.models import Cell
 
 import openpyxl
 
-from backend.table_service.api.serializers import update_auto_column
+from api.serializers import update_auto_column
 
 
 def get_table_ids_permissions(user):
