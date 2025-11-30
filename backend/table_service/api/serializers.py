@@ -34,27 +34,82 @@ def numberToChar(num):
     return result
 
 
+def update_auto_with_related_number(auto_column, rows_ids):
+    related_column_id = auto_column.related_number_column_id
+
+    rows_with_values = []
+    for row_id in rows_ids:
+        cell = Cell.objects.filter(column=related_column_id, row=row_id).first()
+        current_value = cell.value if cell else None
+        rows_with_values.append((row_id, current_value))
+    number = 1
+    previous_value = None
+
+    for row_id, current_value in rows_with_values:
+        if current_value != previous_value:
+            number = 1
+            previous_value = current_value
+
+        Cell.objects.filter(column=auto_column.id, row=row_id).update(value=str(number))
+        number += 1
+
+
+def update_auto_with_related_columns(auto_column, rows_ids):
+    column_ids = auto_column.related_column_ids
+    columns_dict = []
+    for row_id in rows_ids:
+        row_value_list = []
+        for column_id in column_ids:
+            cell = Cell.objects.filter(column=column_id, row=row_id).first()
+            column_value = cell.value if cell else None
+            row_value_list.append(column_value)
+        columns_dict.append(tuple(row_value_list))
+
+    unique_rows = list(set(columns_dict))
+    for unique_row in unique_rows:
+        indices = [x for x, item in enumerate(columns_dict) if item == unique_row]
+        number = 1
+        for index in indices:
+            Cell.objects.filter(column=auto_column.id, row=rows_ids[index]).update(value=str(number))
+            number += 1
+
+
 def update_auto_column(table_id):
     auto_column = Column.objects.filter(table_id=table_id, data_type='auto').first()
-    if auto_column:
-        column_ids = auto_column.related_column_ids
-        columns_dict = []
-        rows_ids = Table.objects.prefetch_related('rows').get(id=table_id).rows.all().values_list('id', flat=True)
-        Cell.objects.filter(row__in=rows_ids, column=auto_column.id).update(value="")
-        for row_id in rows_ids:
-            row_value_list = []
-            for column_id in column_ids:
-                column_value = Cell.objects.filter(column=column_id, row=row_id).first().value
-                row_value_list.append(column_value)
-            columns_dict.append(tuple(row_value_list))
-            row_value_list.clear()
-        unique_rows = list(set(columns_dict))
-        for unique_row in unique_rows:
-            indices = [x for x, item in enumerate(columns_dict) if item == unique_row]
-            number = 1
-            for index in indices:
-                Cell.objects.filter(column=auto_column.id, row=rows_ids[index]).update(value="{}".format(number))
-                number += 1
+    if not auto_column:
+        return
+
+    rows_ids = Table.objects.prefetch_related('rows').get(id=table_id).rows.all().values_list('id', flat=True)
+    Cell.objects.filter(row__in=rows_ids, column=auto_column.id).update(value="")
+
+    if auto_column.related_number_column_id:
+        update_auto_with_related_number(auto_column, rows_ids)
+    else:
+        update_auto_with_related_columns(auto_column, rows_ids)
+
+# def update_auto_column(table_id):
+#     auto_column = Column.objects.filter(table_id=table_id, data_type='auto').first()
+#     if auto_column:
+#         column_ids = auto_column.related_column_ids
+#         column_by_date_id = auto_column.related_number_column_id
+#         columns_dict = []
+#         rows_ids = Table.objects.prefetch_related('rows').get(id=table_id).rows.all().values_list('id', flat=True)
+#         Cell.objects.filter(row__in=rows_ids, column=auto_column.id).update(value="")
+#         if not column_by_date_id:
+#             for row_id in rows_ids:
+#                 row_value_list = []
+#                 for column_id in column_ids:
+#                     column_value = Cell.objects.filter(column=column_id, row=row_id).first().value
+#                     row_value_list.append(column_value)
+#                 columns_dict.append(tuple(row_value_list))
+#                 row_value_list.clear()
+#         unique_rows = list(set(columns_dict))
+#         for unique_row in unique_rows:
+#             indices = [x for x, item in enumerate(columns_dict) if item == unique_row]
+#             number = 1
+#             for index in indices:
+#                 Cell.objects.filter(column=auto_column.id, row=rows_ids[index]).update(value="{}".format(number))
+#                 number += 1
 
 def normalize_row_orders(table):
     rows = Row.objects.filter(table=table).order_by('order')
@@ -135,9 +190,10 @@ class ProfileCreateUpdateSerializer(serializers.ModelSerializer):
 class ColumnSerializer(serializers.ModelSerializer):
     select_values = serializers.SerializerMethodField(required=False)
     related_column_ids = serializers.ListField(child=serializers.IntegerField(), required=False, allow_empty=True)
+    related_number_column_id = serializers.IntegerField(required=False)
     class Meta:
         model = Column
-        fields = ['id', 'name', 'order', 'data_type', "table", 'select_values', 'related_column_ids']
+        fields = ['id', 'name', 'order', 'data_type', "table", 'select_values', 'related_column_ids','related_number_column_id']
         extra_kwargs = {
             'id': {'required': False},
             'table': {'required': False},
