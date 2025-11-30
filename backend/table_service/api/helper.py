@@ -1,5 +1,6 @@
 from datetime import date, datetime
 from io import BytesIO
+import re
 
 import pandas as pd
 from django.http import HttpResponse
@@ -11,9 +12,15 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.renderers import BrowsableAPIRenderer
 from asgiref.sync import sync_to_async
 
-from api.utils import send_table_create, send_cell_lock_remove
+from api.formulas import calculate_formula
+from api.utils import send_table_create, send_cell_lock_remove, send_cell_update, send_to_demon
 from tables.models import TablePermission, TableFilialPermission, Profile, RowPermission, RowFilialPermission, Table, \
-    Row, Cell, Column, CellLock, User
+    Row, Cell, Column, CellLock, User, ColumnFilialPermission, ColumnPermission, CellEditLog
+
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
+from tables.models import Cell
 
 import openpyxl
 
@@ -105,14 +112,12 @@ def prepare_cell(row, column, table, value):
     return cell
 
 
-
 def import_table(file, name, user):
     try:
         with transaction.atomic():
             wb = openpyxl.load_workbook(file, data_only=True)
             ws = wb.active
 
-            # Создаём таблицу
             table = Table.objects.create(title=name, owner=user)
 
             TablePermission.objects.create(
@@ -121,16 +126,14 @@ def import_table(file, name, user):
                 can_view=True,
             )
 
-            # Читаем данные из Excel
             rows_data = list(ws.iter_rows(values_only=True))
             if not rows_data:
                 return table
 
-            # Определяем заголовки и типы колонок
             headers = [str(header).strip() for header in rows_data[0]]
             column_types = determine_column_types(rows_data[1:])
 
-            # Создаём колонки
+
             columns = []
             for order, (header, data_type) in enumerate(zip(headers, column_types), start=1):
                 column = Column(
@@ -143,7 +146,14 @@ def import_table(file, name, user):
 
             Column.objects.bulk_create(columns)
 
-            # Подготавливаем строки
+            columns_permissions = []
+            for column in columns:
+                column_permission = ColumnPermission(column=column, user=user)
+                columns_permissions.append(column_permission)
+
+            ColumnPermission.objects.abulk_create(columns_permissions)
+
+
             rows = []
             for row_order, _ in enumerate(rows_data[1:], start=1):
                 row = Row(
@@ -152,13 +162,11 @@ def import_table(file, name, user):
                     created_by=user
                 )
                 rows.append(row)
-
             Row.objects.bulk_create(rows)
 
-            # Получаем созданные строки (с актуальными ID)
-            created_rows = list(Row.objects.filter(table=table).order_by('order'))
+            created_rows = sorted(rows, key=lambda obj: obj.order)
 
-            # Подготавливаем ячейки
+
             cells = []
             row_permissions = []
             for row_obj, row_values in zip(created_rows, rows_data[1:]):
@@ -175,9 +183,40 @@ def import_table(file, name, user):
                     cell = prepare_cell(row_obj, column,table, value)
                     if cell:
                         cells.append(cell)
-
-            RowPermission.objects.bulk_create(row_permissions)
             Cell.objects.bulk_create(cells)
+            RowPermission.objects.bulk_create(row_permissions)
+
+            # Определение типа колонок
+            date_pattern = [r'\d{1,2}\.\d{1,2}\.\d{4}', r'\d{4}-\d{1,2}-\d{1,2} \d{1,2}:\d{1,2}:\d{1,2}']
+            for column in columns:
+                cells_by_column = [cell for cell in cells if cell.column == column.id]
+                has_float = False
+                has_date = False
+                for cell in cells_by_column:
+                    if cell.value is None:
+                        continue
+                    clean_value = str(cell.value).strip()
+                    if clean_value == "":
+                        continue
+                    try:
+                        float(clean_value)
+                        has_float = True
+                        continue
+                    except ValueError:
+                        pass
+                    for pattern in date_pattern:
+                        if re.fullmatch(pattern, clean_value):
+                            has_date = True
+                            break
+                    else:
+                        continue
+                if has_float:
+                    column.data_type = 'float'
+                if has_date:
+                    column.data_type = 'date'
+                else:
+                    column.data_type = 'text'
+                column.save()
 
             return table
 
@@ -231,10 +270,11 @@ def import_to_existing_table(file, table_id, user):
             for row_obj, row_values in zip(created_rows, rows_data[1:]):
                 row_permissions.append(
                     RowPermission(
-                        row=row_obj,
-                        user=user,
+                        row=row_obj.id,
+                        user=user.id,
                         can_edit=True,
-                        can_delete=True
+                        can_delete=True,
+                        table=table.id
                     )
                 )
 
@@ -259,6 +299,38 @@ def get_cell_by_id(cell_id):
     return cell
 
 @sync_to_async(thread_sensitive=False)
+def update_cell_by_id(cell_id, value, user_id):
+    cell = get_object_or_404(Cell, pk=cell_id)
+
+    # Логируем изменения
+    if cell.value != value and user_id is not None:
+        cell_edit_log_record = CellEditLog(cell_id=cell_id, user_id=user_id, old_value=cell.value, new_value=value, row_id=cell.row)
+        cell_edit_log_record.save()
+    # -----
+
+    cell.value = value
+    cell.formula_value = ''
+    cell.save()
+
+    if cell.value is not None:
+        v = str(cell.value)
+        if len(v) > 0:
+            if v[0] == '=':
+                calculate_formula(cell)
+
+    send_cell_update(cell)
+    recalculate_formulas(cell.table_id)
+    return cell
+
+def recalculate_formulas(table_id):
+    cells_with_formulas = Cell.objects.filter(table_id=table_id, value__istartswith="=")
+    for cell in cells_with_formulas:
+        calculate_formula(cell)
+        send_cell_update(cell)
+
+
+
+@sync_to_async(thread_sensitive=False)
 def create_cell_lock(cell,user):
     CellLock.objects.filter(user=user).delete()
     if CellLock.objects.filter(cell=cell, user=user).count() > 0:
@@ -269,8 +341,11 @@ def create_cell_lock(cell,user):
 
 @sync_to_async(thread_sensitive=False)
 def get_cell_lock_by_cell(cell):
-    cell_lock = CellLock.objects.get(cell=cell)
-    return cell_lock
+    try:
+        cell_lock = CellLock.objects.get(cell=cell)
+        return cell_lock
+    except:
+        return None
 
 @sync_to_async(thread_sensitive=False)
 def remove_cell_lock(cell_lock):
@@ -301,7 +376,6 @@ def export_table(request, table_id, format_type):
             cell = cells_dict.get(col.id)
             value = cell.value
             data[col.name].append(value)
-    kek = data
     df = pd.DataFrame(data)
     filename = 'unknown'
     if format_type == 'csv':
@@ -325,3 +399,22 @@ def export_table(request, table_id, format_type):
     return response
 
 
+@sync_to_async(thread_sensitive=False)
+def reorder_columns(table_id, old_index, new_index):
+    table = Table.objects.get(id=table_id)
+    column_a = Column.objects.get(table=table, order=old_index)
+    column_b = Column.objects.get(table=table, order=new_index)
+    column_a.order = new_index
+    column_b.order = old_index
+    column_a.save()
+    column_b.save()
+
+@sync_to_async(thread_sensitive=False)
+def send_to_demon_proxy(username, path):
+    send_to_demon(username, path)
+
+@receiver(post_save, sender=Cell)
+def notify_listeners(sender, instance, created, **kwargs):
+    if instance:
+        pass
+        #send_cell_update(instance)

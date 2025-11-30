@@ -1,6 +1,7 @@
 #FROM python:3.13
 #ENV PYTHONUNBUFFERED 1
-FROM table-service-app-base313:latest
+#FROM table-service-app-base313:latest
+FROM 10.47.0.221:5000/table_service_api-app:v1
 #RUN mkdir /app
 WORKDIR /app
 #COPY table_service/requirements.txt .

@@ -11,7 +11,7 @@ services:
       - "8004:8000"
     environment:
       # - KRB5_CONFIG=/etc/krb5.conf  # Укажите путь к вашему krb5.conf
-      - KRB5_KEYTAB=./example.keytab # Укажите путь к вашему keytab
+      - KRB5_KEYTAB=./prod9.keytab # Укажите путь к вашему keytab
 
   nginx:
     build:

@@ -4,7 +4,7 @@ from io import BytesIO
 
 from django.contrib.auth.models import User
 from django.db import transaction
-from django.db.models import Q, Max
+from django.db.models import Q, Max, OuterRef, Subquery, CharField
 from django.http import Http404
 from rest_framework import viewsets, generics, status
 from rest_framework.decorators import action
@@ -16,9 +16,10 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 
-from tables.models import Filial, Department, Employee, Profile, Admin, Table, Cell, Column, Row, RowPermission, \
-    TablePermission, TableFilialPermission, RowFilialPermission, CellLock, ColumnPermission
-from .helper import get_table_ids_permissions, FileUploadBrowsableRenderer, import_table, import_to_existing_table, export_table
+from tables.models import CellEditLog, Filial, Department, Employee, Profile, Admin, Table, Cell, Column, Row, RowPermission, \
+    TablePermission, TableFilialPermission, RowFilialPermission, CellLock, ColumnPermission, SelectType
+from .helper import get_table_ids_permissions, FileUploadBrowsableRenderer, import_table, import_to_existing_table, \
+    export_table, update_cell_by_id
 from .serializers import (
     UserSerializer,
     FilialSerializer,
@@ -29,7 +30,8 @@ from .serializers import (
     ProfileCreateUpdateSerializer,
     TableListSerializer, TableDetailSerializer, CellSerializer, ColumnSerializer, RowSerializer,
     RowPermissionSerializer, TablePermissionsSerializer, TableFilialPermissionsSerializer,
-    RowFilialPermissionSerializer
+    RowFilialPermissionSerializer, SelectTypeSerializer, CellEditLogSerializer, update_auto_column,
+    ColumnPermissionSerializer
 )
 from .utils import send_table_update, send_cell_update
 
@@ -97,12 +99,18 @@ class UserViewSet(viewsets.ModelViewSet):
         queryset = super().get_queryset()
         table_id = self.request.query_params.get('table_id', None)
         row_id = self.request.query_params.get('row_id', None)
+        column_id = self.request.query_params.get('column_id', None)
         if row_id and table_id:
             user_ids_table = TablePermission.objects.filter(table_id=table_id).values_list('user_id', flat=True)
-            user_ids_row = RowPermission.objects.filter(table_id=table_id).values_list('user__id', flat=True)
+            user_ids_row = RowPermission.objects.filter(table=table_id, row=row_id).values_list('user', flat=True)
             user_ids = set(user_ids_table).difference(set(user_ids_row))
-            queryset = queryset.filter(user__id__in=user_ids)
-        if table_id:
+            queryset = queryset.filter(id__in=user_ids)
+        elif column_id and table_id:
+            user_ids_table = TablePermission.objects.filter(table_id=table_id).values_list('user_id', flat=True)
+            user_ids_column = ColumnPermission.objects.filter(table=table_id, column=column_id).values_list('user', flat=True)
+            user_ids = set(user_ids_table).difference(set(user_ids_column))
+            queryset = queryset.filter(id__in=user_ids)
+        elif table_id:
             user_ids = TablePermission.objects.filter(table_id=table_id).values_list('user__id', flat=True)
             queryset = queryset.exclude(id__in=user_ids)
         return queryset
@@ -239,9 +247,11 @@ class TableDetailViewSet(viewsets.ModelViewSet):
     def export(self, request, pk=None, format_type='xlsx'):
         if format_type not in ['csv', 'xls', 'xlsx']:
             return Response({'error': 'Invalid format'}, status=400)
-
-        response = export_table(request, pk, format_type)
-        return
+        try:
+            response = export_table(request, pk, format_type)
+            return response
+        except:
+            return Response({'error': 'Ошибка экспорта'}, status=400)
 
     @action(detail=True, methods=['post'])
     def set_permission(self, request, pk=None):
@@ -256,7 +266,7 @@ class TableDetailViewSet(viewsets.ModelViewSet):
                 column_permissions = []
                 row_permissions = []
                 for column_id in columns_ids:
-                    columnpermission = ColumnPermission(table_id=pk, column_id=column_id)
+                    columnpermission = ColumnPermission(table_id=pk, column=column_id)
                     column_permissions.append(columnpermission)
                 else:
                     ColumnPermission.objects.bulk_create(column_permissions, ignore_conflicts=True)
@@ -351,6 +361,16 @@ class ColumnViewSet(viewsets.ModelViewSet):
     ordering_fields = ('id', 'name', 'order', 'data_type')
     ordering = ('id',)
 
+
+    @action(detail=True, methods=['get'], url_path='select')
+    def getSelect(self, request, pk=None):
+        column = Column.objects.get(pk=pk)
+        if column and column.data_type == 'SELECT':
+            select_types = SelectType.objects.filter(column_id=column.id).values_list('value', flat=True)
+            return Response({"success": True, "select_values": select_types})
+        return Response({"success": False})
+
+
     def perform_create(self, serializer):
         table_id = serializer.validated_data['table'].id
         column_max_order = Column.objects.filter(table_id=table_id).aggregate(max_order=Max('order'))['max_order']
@@ -369,9 +389,18 @@ class ColumnViewSet(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         try:
             column_id = self.kwargs.get('pk')
+            table_id = Column.objects.get(pk=column_id).table.id
+            Cell.objects.filter(column=column_id).delete()
             instance = self.get_object()
             instance.delete()
-            Cell.objects.filter(column=column_id).delete()
+            #Для автоинкремента
+            auto_column = Column.objects.filter(table_id=table_id, data_type='auto').first()
+            table_columns = Column.objects.filter(table_id=table_id).values_list('id', flat=True)
+            if auto_column:
+                columns_ids = set(auto_column.related_column_ids)  &  set(table_columns)
+                auto_column.related_column_ids = list(columns_ids)
+                auto_column.save()
+                update_auto_column(table_id)
             return Response(status=status.HTTP_204_NO_CONTENT)
         except Http404:
             return Response(status=status.HTTP_404_NOT_FOUND)
@@ -383,12 +412,15 @@ class RowDetailViewSet(viewsets.ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         row_id = self.kwargs.get('pk')
+        table_id = Row.objects.get(pk=row_id).table.id
         if not Row.objects.filter(pk=row_id).exists():
             return Response({'error': 'Row not found'}, status=404)
         instance = self.get_object()
         try:
             self.perform_destroy(instance)
             Cell.objects.filter(row=row_id).delete()
+            #Для автоинкеремента
+            update_auto_column(table_id)
             return Response(status=status.HTTP_204_NO_CONTENT)
         except Http404:
             return Response(status=status.HTTP_404_NOT_FOUND)
@@ -396,8 +428,53 @@ class RowDetailViewSet(viewsets.ModelViewSet):
 
 class RowListViewSet(viewsets.ModelViewSet):
     serializer_class = RowSerializer
-    queryset = Row.objects.all()
+    queryset = Row.objects.all().order_by('order')
     pagination_class = RowPagination
+
+    def sort_by_param(self, queryset, sort_field, sort_direction):
+        order_prefix = '' if sort_direction == 'asc' else '-'
+        subquery = Cell.objects.filter(
+            row=OuterRef('id'),
+            column=sort_field
+        ).values('value')[:1]
+
+        queryset = queryset.annotate(
+            sort_value=Subquery(subquery, output_field=CharField())
+        ).order_by(f'{order_prefix}sort_value', 'order')
+
+        return queryset
+
+    def sort_by_param_optimized(self, queryset, sort_field, sort_direction):
+        """Оптимизированная сортировка без использования OuterRef"""
+        from django.db.models import Case, When, Value, CharField
+
+        # Получаем значения для сортировки одним запросом
+        sort_values = Cell.objects.filter(
+            column=sort_field,
+            row__in=queryset.values_list('id', flat=True)
+        ).values('row', 'value')
+
+        # Создаем mapping row_id -> value
+        value_map = {item['row']: item['value'] for item in sort_values}
+
+        # Создаем условия для сохранения порядка
+        preserved_order = Case(
+            *[When(id=row_id, then=Value(pos)) for pos, row_id in enumerate(queryset.values_list('id', flat=True))],
+            output_field=CharField()
+        )
+
+        # Аннотируем значения для сортировки
+        order_prefix = '' if sort_direction == 'asc' else '-'
+
+        result_queryset = queryset.annotate(
+            sort_value=Case(
+                *[When(id=row_id, then=Value(value)) for row_id, value in value_map.items()],
+                default=Value(''),
+                output_field=CharField()
+            )
+        ).order_by(f'{order_prefix}sort_value', preserved_order)
+
+        return result_queryset
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -406,13 +483,106 @@ class RowListViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(table=table_id).order_by('order')
         else:
             queryset.none()
-        search_value = self.request.query_params.get('search', '')
-        if search_value:
+
+        # Если указан признак сортировки
+        sort_field = self.request.query_params.get('sort_field', None)
+        sort_direction = self.request.query_params.get('sort_direction', None)
+
+        # Общий поиск по строкам
+        search_value = self.request.query_params.get('search', None)
+        if search_value is not None:
             filtered_queryset = []
             for row in queryset:
                 if Cell.objects.filter(Q(value__icontains=search_value, row=row.id)).count() > 0:
                     filtered_queryset.append(row)
             return filtered_queryset
+
+        # Поиск по колоночным фильтрам
+        is_column_search = self.request.query_params.get('is_column_search', None)
+        if is_column_search is not None:
+            column_search_mode = self.request.query_params.get('column_search_mode', None)
+            filtered_queryset = []
+            if column_search_mode == 'or':
+                # 1. Собираем условия фильтрации
+                filter_conditions = Q()
+                columns = Column.objects.filter(table_id=table_id)
+
+                for column in columns:
+                    search_value = self.request.query_params.get(str(column.id))
+                    if search_value:
+                        # Добавляем условие OR для каждой колонки
+                        filter_conditions |= Q(
+                            id__in=Cell.objects.filter(
+                                column=column.id,
+                                value__icontains=search_value
+                            ).values_list('row', flat=True)
+                        )
+
+                # 2. Применяем фильтрацию
+                if filter_conditions:
+                    result_queryset = queryset.filter(filter_conditions).distinct()
+                else:
+                    result_queryset = queryset
+
+                # 3. Сортировка
+                if sort_field is not None:
+                    result_queryset = self.sort_by_param_optimized(result_queryset, sort_field, sort_direction)
+
+                return result_queryset
+            else:
+                # 1. Собираем все параметры фильтрации одним запросом
+                columns = Column.objects.filter(table_id=table_id).values('id', 'table_id')
+                filter_params = {}
+
+                for column in columns:
+                    search_value = self.request.query_params.get(str(column['id']))
+                    if search_value:
+                        filter_params[column['id']] = search_value
+
+                # Если нет параметров фильтрации, возвращаем исходный queryset
+                if not filter_params:
+                    if sort_field is not None:
+                        return self.sort_by_param_optimized(queryset, sort_field, sort_direction)
+                    return queryset
+
+                # 2. Определяем базовый набор ID строк
+                if filtered_queryset:
+                    base_row_ids = [row.id for row in filtered_queryset]
+                else:
+                    base_row_ids = list(queryset.values_list('id', flat=True))
+
+                # 3. Для каждого условия фильтрации находим подходящие row_id
+                valid_row_ids = set(base_row_ids)
+
+                for column_id, search_value in filter_params.items():
+                    if not valid_row_ids:  # Если уже нет подходящих строк, выходим
+                        break
+
+                    # Ищем ячейки, удовлетворяющие условию
+                    matching_cells = Cell.objects.filter(
+                        column=column_id,
+                        value__icontains=search_value,
+                        row__in=valid_row_ids
+                    ).values_list('row', flat=True)
+
+                    # Обновляем множество valid_row_ids
+                    valid_row_ids = valid_row_ids.intersection(set(matching_cells))
+
+                # 4. Фильтруем исходный queryset по найденным ID
+                if valid_row_ids:
+                    result_queryset = queryset.filter(id__in=valid_row_ids)
+                else:
+                    result_queryset = queryset.none()
+
+                # 5. Применяем сортировку
+                if sort_field is not None:
+                    result_queryset = self.sort_by_param_optimized(result_queryset, sort_field, sort_direction)
+
+                return result_queryset
+
+        if sort_field is not None:
+            queryset = self.sort_by_param(queryset, sort_field, sort_direction)
+
         return queryset
 
 
@@ -429,11 +599,14 @@ class TablePermissionViewSet(viewsets.ModelViewSet):
             row_permission = RowPermission(row=row.id, user=user.id, table=table.id)
             row_permissions.append(row_permission)
         RowPermission.objects.bulk_create(row_permissions)
-        # RowPermission.objects.
+
         serializer.save()
 
     def perform_destroy(self, instance):
-        RowPermission.objects.filter(table=instance.table.id, user=instance.user.id).delete()
+        user_id = instance.user_id
+        table_id = instance.table.id
+        RowPermission.objects.filter(user=user_id, table=table_id).delete()
+        ColumnPermission.objects.filter(user=user_id, table=table_id).delete()
         instance.delete()
 
     def get_queryset(self):
@@ -480,10 +653,38 @@ class RowPermissionViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(row=row_id)
         if rows_ids:
             filtered_permission = []
-            rows_ids = json.loads(rows_ids)
+            rows_ids = json.loads(rows_ids) # На что пришел запрос с клиента
             for permission in queryset:
                 if permission.row in rows_ids:
-                    filtered_permission.append(permission)
+                    if permission.can_edit:
+                        filtered_permission.append(permission)
+            return  filtered_permission
+        return queryset
+
+
+class ColumnPermissionViewSet(viewsets.ModelViewSet):
+    serializer_class = ColumnPermissionSerializer
+    queryset = ColumnPermission.objects.all()
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        user_id = self.request.query_params.get('user_id')
+        column_id = self.request.query_params.get('column_id')
+        table_id = self.request.query_params.get('table_id')
+        columns_ids = self.request.query_params.get('columns_ids')
+        if table_id:
+            queryset = queryset.filter(table=table_id)
+        if user_id:
+            queryset = queryset.filter(user=user_id)
+        if column_id:
+            queryset = queryset.filter(column=column_id)
+        if columns_ids:
+            filtered_permission = []
+            columns_ids = json.loads(columns_ids) # На что пришел запрос с клиента
+            for permission in queryset:
+                if permission.column in columns_ids:
+                    if permission.can_edit:
+                        filtered_permission.append(permission)
             return  filtered_permission
         return queryset
 
@@ -561,3 +762,28 @@ class RowUploadViewSet(viewsets.ViewSet):
                 "filename": file.name,
                 "size": file.size,
             })
+
+class SelectTypeViewSet(viewsets.ModelViewSet):
+    queryset = SelectType.objects.all()
+    serializer_class = SelectTypeSerializer
+
+    @action(detail=True, methods=['get'], url_path='column')
+    def column(self, request, pk=None):
+        response = []
+        for selecttype in SelectType.objects.filter(column_id=pk):
+            response.append(SelectTypeSerializer(selecttype).data)
+        return Response(response)
+
+
+class CellEditLogViewSet(viewsets.ModelViewSet):
+    queryset = CellEditLog.objects.all()
+    serializer_class = CellEditLogSerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        row_id = self.request.query_params.get('row_id')
+        if row_id:
+            queryset = queryset.filter(row_id=row_id)
+
+        return queryset
+

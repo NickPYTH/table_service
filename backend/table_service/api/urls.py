@@ -29,9 +29,14 @@ router.register(r'rowpermissions', views.RowPermissionViewSet, basename='row-per
 
 router.register(r'rowfilialpermissions', views.RowFilialPermissionViewSet, basename='rowfilialpermissions')
 
+router.register(r'columnpermissions', views.ColumnPermissionViewSet, basename='column-permissions')
+
 router.register(r'file', views.FileUploadViewSet, basename='file')
 
 router.register(r'rowfile', views.RowUploadViewSet, basename='rowfile')
+router.register(r'selecttype', views.SelectTypeViewSet, basename='selecttype')
+
+router.register(r'celleditlog', views.CellEditLogViewSet, basename='celleditlog')
 
 urlpatterns = [
     path('', include(router.urls)),

@@ -1,66 +1,107 @@
 import datetime
 
-from django.db import models
 from django.contrib.auth.models import User
+from django.db import models
+from django.db.models import IntegerField, FloatField, BooleanField, DateField, F, TextField, Value
 from django.db.models.functions import Concat
 from django.urls import reverse
 from django.utils.crypto import get_random_string
-from django.db.models import IntegerField, FloatField, BooleanField, DateField, F, TextField, Value
-from datetime import date
 
 
 class Filial(models.Model):
+    """Модель филиала организации"""
     # id = models.IntegerField(primary_key=True)
-    name = models.CharField(null=True, blank=True)
-    long_name = models.CharField(null=True, blank=True)
-    short_name = models.CharField(null=True, blank=True)
-    set_date = models.DateField(null=True, blank=True)
-    end_date = models.DateField(null=True, blank=True)
-    boss = models.CharField(null=True, blank=True)
+    name = models.CharField(null=True, blank=True, verbose_name="Название")
+    long_name = models.CharField(null=True, blank=True, verbose_name="Полное название")
+    short_name = models.CharField(null=True, blank=True, verbose_name="Короткое название")
+    set_date = models.DateField(null=True, blank=True, verbose_name="Дата создания")
+    end_date = models.DateField(null=True, blank=True, verbose_name="Дата закрытия")
+    boss = models.CharField(null=True, blank=True, verbose_name="Руководитель")
+
+    class Meta:
+        verbose_name = 'Филиал'
+        verbose_name_plural = 'Филиалы'
+
+    def __str__(self):
+        return self.name or self.short_name or "Филиал"
 
 
 class Employee(models.Model):
+    """Модель сотрудника"""
     # id = models.IntegerField(primary_key=True)
-    id_filial = models.IntegerField(null=True, blank=True)
-    id_department = models.IntegerField(null=True, blank=True)
-    post_name = models.CharField(null=True, blank=True)
-    tabnumber = models.IntegerField(unique=True)  # Табельный номер
-    firstname = models.CharField(max_length=50)
-    secondname = models.CharField(max_length=50)
-    lastname = models.CharField(max_length=50)
-    set_date = models.DateField(null=True, blank=True)
-    end_date = models.DateField(null=True, blank=True)
+    id_filial = models.IntegerField(null=True, blank=True, verbose_name="ID филиала")
+    id_department = models.IntegerField(null=True, blank=True, verbose_name="ID отдела")
+    post_name = models.CharField(null=True, blank=True, verbose_name="Должность")
+    tabnumber = models.IntegerField(unique=True, verbose_name="Табельный номер")  # Табельный номер
+    firstname = models.CharField(max_length=50, verbose_name="Имя")
+    secondname = models.CharField(max_length=50, verbose_name="Фамилия")
+    lastname = models.CharField(max_length=50, verbose_name="Отчество")
+    set_date = models.DateField(null=True, blank=True, verbose_name="Дата приема")
+    end_date = models.DateField(null=True, blank=True, verbose_name="Дата увольнения")
+
+    class Meta:
+        verbose_name = 'Сотрудник'
+        verbose_name_plural = 'Сотрудники'
+
+    def __str__(self):
+        return f"{self.secondname} {self.firstname} {self.lastname}"
 
 
 class Department(models.Model):
+    """Модель отдела/департамента"""
     # id = models.IntegerField(primary_key=True)
-    id_parent = models.IntegerField(null=True, blank=True)
-    id_filial = models.IntegerField(null=True, blank=True)
-    name = models.CharField(null=True, blank=True)
-    long_name = models.CharField(null=True, blank=True)
-    short_name = models.CharField(null=True, blank=True)
-    set_date = models.DateField(null=True, blank=True)
-    end_date = models.DateField(null=True, blank=True)
+    id_parent = models.IntegerField(null=True, blank=True, verbose_name="ID родительского отдела")
+    id_filial = models.IntegerField(null=True, blank=True, verbose_name="ID филиала")
+    name = models.CharField(null=True, blank=True, verbose_name="Название")
+    long_name = models.CharField(null=True, blank=True, verbose_name="Полное название")
+    short_name = models.CharField(null=True, blank=True, verbose_name="Короткое название")
+    set_date = models.DateField(null=True, blank=True, verbose_name="Дата создания")
+    end_date = models.DateField(null=True, blank=True, verbose_name="Дата закрытия")
+
+    class Meta:
+        verbose_name = 'Отдел'
+        verbose_name_plural = 'Отделы'
+
+    def __str__(self):
+        return self.name or self.short_name or "Отдел"
 
 
 class Profile(models.Model):
+    """Профиль пользователя, связанный с сотрудником"""
     user = models.OneToOneField(
         User,
-        on_delete=models.CASCADE)
+        on_delete=models.CASCADE,
+        verbose_name="Пользователь"
+    )
     employee = models.OneToOneField(
         Employee,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='profile'
+        related_name='profile',
+        verbose_name="Сотрудник"
     )
+
+    class Meta:
+        verbose_name = 'Профиль'
+        verbose_name_plural = 'Профили'
+
+    def __str__(self):
+        return f"Профиль {self.user.username}"
 
 
 class Table(models.Model):
-    title = models.CharField(max_length=200)
-    owner = models.ForeignKey(User, on_delete=models.CASCADE)
-    created_at = models.DateTimeField(default=datetime.datetime.now())
-    share_token = models.CharField(max_length=32, unique=True, blank=True)
+    """Основная модель таблицы"""
+    title = models.CharField(max_length=200, verbose_name="Название таблицы")
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Владелец")
+    created_at = models.DateTimeField(default=datetime.datetime.now(), verbose_name="Дата создания")
+    share_token = models.CharField(max_length=32, unique=True, blank=True, verbose_name="Токен доступа")
+    with_cell_confirm = models.BooleanField(default=False, verbose_name="Подтверждение ячеек")
+    with_cell_logging = models.BooleanField(default=False, verbose_name="Логирование изменений")
+
+    class Meta:
+        verbose_name = 'Таблица'
+        verbose_name_plural = 'Таблицы'
 
     def save(self, *args, **kwargs):
         if not self.share_token:
@@ -115,51 +156,81 @@ class Table(models.Model):
 
 
 class Admin(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    created_at = models.DateTimeField(default=datetime.datetime.now())
+    """Администраторы сервиса"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Пользователь")
+    created_at = models.DateTimeField(default=datetime.datetime.now(), verbose_name="Дата назначения")
 
     class Meta:
         verbose_name = 'Администратор сервиса'
         verbose_name_plural = 'Администраторы сервиса'
 
+    def __str__(self):
+        return f"Админ: {self.user.username}"
+
+
+class SelectType(models.Model):
+    """Типы значений для выпадающих списков"""
+    column_id = models.IntegerField(null=True, blank=True, verbose_name="ID колонки")
+    name = models.CharField(null=True, blank=True, verbose_name="Значение")
+
+    class Meta:
+        unique_together = ('column_id', 'name')
+        verbose_name = 'Значение выпадающего списка'
+        verbose_name_plural = 'Значения выпадающих списков'
+
+    def __str__(self):
+        return self.name or "Значение списка"
+
 
 class Column(models.Model):
+    """Колонки таблицы"""
     class ColumnType(models.TextChoices):
         TEXT = 'text', 'Текст'
         INTEGER = 'integer', 'Целое число'
         FLOAT = 'float', 'Число с плавающей точкой'
         BOOLEAN = 'boolean', 'Логическое'
         DATE = 'date', 'Дата'
+        DATETIME = 'datetime', 'Дата и время'
+        SELECT = 'select', 'Выпадающий список'
+        AUTO_INCREMENT = 'auto', 'Автоинкремент'
 
-    table = models.ForeignKey(Table, on_delete=models.CASCADE, related_name='columns')
-    name = models.CharField(max_length=100)
-    order = models.PositiveIntegerField(default=0)
+    table = models.ForeignKey(Table, on_delete=models.CASCADE, related_name='columns', verbose_name="Таблица")
+    name = models.CharField(max_length=100, verbose_name="Название колонки")
+    order = models.PositiveIntegerField(default=0, verbose_name="Порядок")
     data_type = models.CharField(
         max_length=10,
         choices=ColumnType.choices,
-        default=ColumnType.TEXT
+        default=ColumnType.TEXT,
+        verbose_name="Тип данных"
     )
+    related_column_ids = models.JSONField(default=list, blank=True, verbose_name="Связанные колонки")
 
     class Meta:
         ordering = ['order']
+        verbose_name = 'Колонка'
+        verbose_name_plural = 'Колонки'
 
     def __str__(self):
         return f"{self.table.title} - {self.name}"
 
 
 class Row(models.Model):
-    table = models.ForeignKey(Table, on_delete=models.CASCADE, related_name='rows')
-    order = models.PositiveIntegerField(default=0)
+    """Строки таблицы"""
+    table = models.ForeignKey(Table, on_delete=models.CASCADE, related_name='rows', verbose_name="Таблица")
+    order = models.PositiveIntegerField(default=0, verbose_name="Порядок")
     created_by = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='created_rows'
+        related_name='created_rows',
+        verbose_name="Создатель"
     )
 
     class Meta:
         ordering = ['order']
+        verbose_name = 'Строка'
+        verbose_name_plural = 'Строки'
 
     def has_edit_permission(self, user):
         """Проверяет, может ли пользователь редактировать строку"""
@@ -307,105 +378,197 @@ class Row(models.Model):
 
 
 class Cell(models.Model):
-    table_id = models.IntegerField(blank=True, null=True)
-    row = models.IntegerField(blank=True, null=True)
-    column = models.IntegerField(blank=True, null=True)
-    value = models.TextField(blank=True, null=True)
-
+    """Ячейки таблицы"""
+    table_id = models.IntegerField(blank=True, null=True, verbose_name="ID таблицы")
+    row = models.IntegerField(blank=True, null=True, verbose_name="ID строки")
+    column = models.IntegerField(blank=True, null=True, verbose_name="ID колонки")
+    value = models.TextField(blank=True, null=True, verbose_name="Значение")
+    formula_value = models.TextField(blank=True, null=True, verbose_name="Значение формулы")
 
     class Meta:
         unique_together = ('row', 'column')
+        verbose_name = 'Ячейка'
+        verbose_name_plural = 'Ячейки'
 
     def __str__(self):
         return f"{self.row} - {self.column}: {self.value}"
 
 
 class TablePermission(models.Model):
-    table = models.ForeignKey(Table, on_delete=models.CASCADE, related_name='permissions')
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    can_view = models.BooleanField(default=True)
-    can_edit = models.BooleanField(default=True)
+    """Права доступа к таблице для пользователей"""
+    table = models.ForeignKey(Table, on_delete=models.CASCADE, related_name='permissions', verbose_name="Таблица")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Пользователь")
+    can_view = models.BooleanField(default=True, verbose_name="Может просматривать")
+    can_edit = models.BooleanField(default=True, verbose_name="Может редактировать")
 
     class Meta:
         unique_together = ('table', 'user')
+        verbose_name = 'Право доступа к таблице'
+        verbose_name_plural = 'Права доступа к таблицам'
+
+    def __str__(self):
+        return f"{self.user.username} - {self.table.title}"
 
 
 class TableFilialPermission(models.Model):
-    table = models.ForeignKey(Table, on_delete=models.CASCADE, related_name='filial_permissions')
-    filial = models.ForeignKey(Filial, on_delete=models.CASCADE)
-    can_view = models.BooleanField(default=True)
+    """Права доступа к таблице для филиалов"""
+    table = models.ForeignKey(Table, on_delete=models.CASCADE, related_name='filial_permissions', verbose_name="Таблица")
+    filial = models.ForeignKey(Filial, on_delete=models.CASCADE, verbose_name="Филиал")
+    can_view = models.BooleanField(default=True, verbose_name="Может просматривать")
 
     class Meta:
         unique_together = ('table', 'filial')
+        verbose_name = 'Право доступа филиала'
+        verbose_name_plural = 'Права доступа филиалов'
+
+    def __str__(self):
+        return f"{self.filial.name} - {self.table.title}"
 
 
 class RowPermission(models.Model):
-    table = models.IntegerField(blank=False)
-    row = models.IntegerField(blank=False)
-    user = models.IntegerField(blank=False)
-    can_edit = models.BooleanField(default=True)
-    can_delete = models.BooleanField(default=False)
+    """Права доступа к строкам для пользователей"""
+    table = models.IntegerField(blank=False, verbose_name="ID таблицы")
+    row = models.IntegerField(blank=False, verbose_name="ID строки")
+    user = models.IntegerField(blank=False, verbose_name="ID пользователя")
+    can_edit = models.BooleanField(default=True, verbose_name="Может редактировать")
+    can_delete = models.BooleanField(default=False, verbose_name="Может удалять")
 
     class Meta:
         unique_together = ('row', 'user')
+        verbose_name = 'Право доступа к строке'
+        verbose_name_plural = 'Права доступа к строкам'
+
+    def __str__(self):
+        return f"Строка {self.row} - Пользователь {self.user}"
 
 
 class RowFilialPermission(models.Model):
-    row = models.IntegerField(blank=False)
-    filial = models.IntegerField(blank=False)
-    can_edit = models.BooleanField(default=True)
-    can_delete = models.BooleanField(default=False)
+    """Права доступа к строкам для филиалов"""
+    row = models.IntegerField(blank=False, verbose_name="ID строки")
+    filial = models.IntegerField(blank=False, verbose_name="ID филиала")
+    can_edit = models.BooleanField(default=True, verbose_name="Может редактировать")
+    can_delete = models.BooleanField(default=False, verbose_name="Может удалять")
 
     class Meta:
         unique_together = ('row', 'filial')
+        verbose_name = 'Право филиала на строку'
+        verbose_name_plural = 'Права филиалов на строки'
+
+    def __str__(self):
+        return f"Строка {self.row} - Филиал {self.filial}"
 
 
 class RowLock(models.Model):
+    """Блокировки строк"""
     row = models.OneToOneField(
         Row,
         on_delete=models.CASCADE,
-        related_name='lock'
+        related_name='lock',
+        verbose_name="Строка"
     )
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='row_locks'
+        related_name='row_locks',
+        verbose_name="Пользователь"
     )
-    locked_at = models.DateTimeField()
+    locked_at = models.DateTimeField(verbose_name="Время блокировки")
+
+    class Meta:
+        verbose_name = 'Блокировка строки'
+        verbose_name_plural = 'Блокировки строк'
+
+    def __str__(self):
+        return f"Строка {self.row.id} заблокирована {self.user.username}"
 
 
 class TableFilialLock(models.Model):
-    table = models.ForeignKey(Table, on_delete=models.CASCADE, related_name='filial_add_permissions')
-    filial = models.ForeignKey(Filial, on_delete=models.CASCADE)
-    locked_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
-    locked_at = models.DateTimeField()
+    """Блокировки добавления строк для филиалов"""
+    table = models.ForeignKey(Table, on_delete=models.CASCADE, related_name='filial_add_permissions', verbose_name="Таблица")
+    filial = models.ForeignKey(Filial, on_delete=models.CASCADE, verbose_name="Филиал")
+    locked_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, verbose_name="Заблокировал")
+    locked_at = models.DateTimeField(verbose_name="Время блокировки")
 
     class Meta:
         unique_together = ('table', 'filial')
+        verbose_name = 'Блокировка филиала'
+        verbose_name_plural = 'Блокировки филиалов'
+
+    def __str__(self):
+        return f"{self.filial.name} - {self.table.title}"
 
 
 class ColumnPermission(models.Model):
-    column = models.ForeignKey(Column, on_delete=models.CASCADE, related_name='permissions')
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    can_view = models.BooleanField(default=True)
-    can_edit = models.BooleanField(default=True)
+    """Права доступа к колонкам для пользователей"""
+    column = models.IntegerField(blank=False, verbose_name="ID колонки")
+    user = models.IntegerField(blank=False, verbose_name="ID пользователя")
+    table = models.IntegerField(blank=False, verbose_name="ID таблицы")
+    can_view = models.BooleanField(default=True, verbose_name="Может просматривать")
+    can_edit = models.BooleanField(default=True, verbose_name="Может редактировать")
 
     class Meta:
         unique_together = ('column', 'user')
+        verbose_name = 'Право доступа к колонке'
+        verbose_name_plural = 'Права доступа к колонкам'
+
+    def __str__(self):
+        return f"Колонка {self.column} - Пользователь {self.user}"
 
 
 class ColumnFilialPermission(models.Model):
-    column = models.ForeignKey(Column, on_delete=models.CASCADE, related_name='filial_add_permissions')
-    filial = models.ForeignKey(Filial, on_delete=models.CASCADE)
-    can_delete = models.BooleanField(default=True)
-    can_edit = models.BooleanField(default=True)
+    """Права доступа к колонкам для филиалов"""
+    column = models.ForeignKey(Column, on_delete=models.CASCADE, related_name='filial_add_permissions', verbose_name="Колонка")
+    filial = models.ForeignKey(Filial, on_delete=models.CASCADE, verbose_name="Филиал")
+    can_delete = models.BooleanField(default=True, verbose_name="Может удалять")
+    can_edit = models.BooleanField(default=True, verbose_name="Может редактировать")
 
     class Meta:
         unique_together = ('column', 'filial')
+        verbose_name = 'Право филиала на колонку'
+        verbose_name_plural = 'Права филиалов на колонки'
 
+    def __str__(self):
+        return f"{self.column.name} - {self.filial.name}"
 
 
 class CellLock(models.Model):
-    cell = models.ForeignKey(Cell, on_delete=models.CASCADE, related_name='cells_lock_cell', unique=True)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='cells_lock_user')
-    locked_at = models.DateTimeField(default=datetime.datetime.now())
+    """Блокировки ячеек"""
+    cell = models.ForeignKey(Cell, on_delete=models.CASCADE, related_name='cells_lock_cell', unique=True, verbose_name="Ячейка")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='cells_lock_user', verbose_name="Пользователь")
+    locked_at = models.DateTimeField(default=datetime.datetime.now(), verbose_name="Время блокировки")
+
+    class Meta:
+        verbose_name = 'Блокировка ячейки'
+        verbose_name_plural = 'Блокировки ячеек'
+
+    def __str__(self):
+        return f"Ячейка {self.cell.id} заблокирована {self.user.username}"
+
+
+class CellEditLog(models.Model):
+    """Лог изменений ячеек"""
+    user_id = models.IntegerField(verbose_name="ID пользователя")
+    old_value = models.CharField(null=True, verbose_name="Старое значение")
+    new_value = models.CharField(null=True, verbose_name="Новое значение")
+    cell_id = models.IntegerField(verbose_name="ID ячейки")
+    row_id = models.IntegerField(null=True, verbose_name="ID строки")
+
+    class Meta:
+        verbose_name = 'Лог изменения ячейки'
+        verbose_name_plural = 'Лог изменений ячеек'
+
+    def __str__(self):
+        return f"Ячейка {self.cell_id} изменена пользователем {self.user_id}"
+
+
+class TableUserOnline(models.Model):
+    """Пользователи онлайн в таблицах"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Пользователь")
+    table = models.ForeignKey(Table, on_delete=models.CASCADE, verbose_name="Таблица")
+
+    class Meta:
+        verbose_name = 'Пользователь онлайн'
+        verbose_name_plural = 'Пользователи онлайн'
+
+    def __str__(self):
+        return f"{self.user.username} в {self.table.title}"

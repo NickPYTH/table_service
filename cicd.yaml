@@ -1,0 +1,13 @@
+stages:
+  - deploy
+deploy_on_test job:
+  rules:
+    - if: $CI_COMMIT_REF_NAME == "test_server_cicd"
+  stage: deploy
+  scripts:
+    - cd /opt/gitflic-runner/table_service_api
+    - git checkout test_server_cicd
+    - git pull
+    - docker compose up --build -d
+    - sleep 2
+    - echo "Check service!"

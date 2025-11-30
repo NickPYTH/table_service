@@ -8,7 +8,7 @@
     <option name="TEMPLATE_CONFIGURATION" value="Django" />
     <option name="TEMPLATE_FOLDERS">
       <list>
-        <option value="$MODULE_DIR$/table_service/tables/templates" />
+        <option value="$MODULE_DIR$/backend/table_service/tables/templates" />
       </list>
     </option>
   </component>
