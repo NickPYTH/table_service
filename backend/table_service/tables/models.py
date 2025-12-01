@@ -205,6 +205,7 @@ class Column(models.Model):
     )
     related_column_ids = models.JSONField(default=list, blank=True, verbose_name="Связанные колонки")
     related_number_column_id = models.IntegerField(blank=True, null=True, verbose_name="Связанная колонка с датой")
+    default_value = models.CharField(blank=True, null=True, verbose_name="Значение по умолчанию")
 
     class Meta:
         ordering = ['order']
